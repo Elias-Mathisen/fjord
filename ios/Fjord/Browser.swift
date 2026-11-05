@@ -3,6 +3,7 @@
 import SwiftUI
 import WebKit
 import CryptoKit
+import SafariServices
 
 @MainActor
 final class Browser: ObservableObject {
@@ -369,12 +370,40 @@ enum Blocker {
             // A changed list gets a new name, so it's compiled again
             let digest = SHA256.hash(data: data).prefix(6).map { String(format: "%02x", $0) }.joined()
             let id = "\(name)-\(digest)"
+            SafariShields.reloadIfChanged(name, digest: digest)
             if let cached = try? await store.contentRuleList(forIdentifier: id) { out.append(cached); continue }
             do {
                 if let compiled = try await store.compileContentRuleList(forIdentifier: id, encodedContentRuleList: json) { out.append(compiled) }
             } catch {
                 print("Fjord: couldn't compile \(name): \(error)")
             }
+        }
+        return out
+    }
+}
+
+// Fjord Shields for Safari (ios/Shields): the same lists as content blockers Safari applies itself. Safari asks a
+// blocker for its list only when told to, so it's told once after an update brings new lists.
+@MainActor
+enum SafariShields {
+    static func id(_ list: String) -> String { "\(Bundle.main.bundleIdentifier ?? "").\(list)" }
+
+    static func reloadIfChanged(_ list: String, digest: String) {
+        let key = "safariList.\(list)"
+        guard UserDefaults.standard.string(forKey: key) != digest else { return }
+        Task {
+            // Fails while it's turned off in Safari: tried again next time
+            if (try? await SFContentBlockerManager.reloadContentBlocker(withIdentifier: id(list))) != nil {
+                UserDefaults.standard.set(digest, forKey: key)
+            }
+        }
+    }
+
+    /// List name -> whether its blocker is turned on in Safari's settings
+    static func states() async -> [String: Bool] {
+        var out: [String: Bool] = [:]
+        for list in Blocker.lists {
+            out[list] = (try? await SFContentBlockerManager.stateOfContentBlocker(withIdentifier: id(list)))?.isEnabled ?? false
         }
         return out
     }

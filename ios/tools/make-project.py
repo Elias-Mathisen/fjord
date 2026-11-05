@@ -108,9 +108,50 @@ def config_list(prefix, configs):
     return uid(prefix + "list")
 
 
+# Fjord Shields for Safari (ios/Shields): a content blocker per list, since Safari takes at most 150,000 rules each,
+# embedded in the app. They share one handler and bundle the app's own ads.json and trackers.json.
+handler_ref = ref("Shields/ContentBlocker.swift", "ContentBlocker.swift", FILE_TYPES[".swift"])
+shields_group = uid("g:shields")
+objects[shields_group] = {"isa": "PBXGroup", "children": [handler_ref, ref("Shields/Info.plist", "Info.plist", "text.plist.xml")],
+                          "path": "Shields", "sourceTree": "<group>"}
+objects[main_group]["children"].append(shields_group)
+extension_targets, dependencies, embedded = [], [], []
+for name in ["ads", "trackers"]:
+    title = "Fjord " + name.capitalize()  # its name in Safari's settings
+    target_name = title.replace(" ", "")
+    ext_product = uid("product:" + name)
+    objects[ext_product] = {"isa": "PBXFileReference", "explicitFileType": "wrapper.app-extension", "includeInIndex": "0",
+                            "path": target_name + ".appex", "sourceTree": "BUILT_PRODUCTS_DIR"}
+    objects[products_group]["children"].append(ext_product)
+    phases = [uid(f"p:{name}:sources"), uid(f"p:{name}:resources")]
+    objects[phases[0]] = {"isa": "PBXSourcesBuildPhase", "buildActionMask": "2147483647",
+                          "files": [build_file(f"{name}:handler", handler_ref)], "runOnlyForDeploymentPostprocessing": "0"}
+    objects[phases[1]] = {"isa": "PBXResourcesBuildPhase", "buildActionMask": "2147483647",
+                          "files": [build_file(f"{name}:list", uid(f"ref:res:{name}.json"))], "runOnlyForDeploymentPostprocessing": "0"}
+    settings = {"APPLICATION_EXTENSION_API_ONLY": "YES", "CODE_SIGN_STYLE": "Automatic", "DEVELOPMENT_TEAM": TEAM,
+                "CURRENT_PROJECT_VERSION": target_settings["CURRENT_PROJECT_VERSION"], "MARKETING_VERSION": target_settings["MARKETING_VERSION"],
+                "GENERATE_INFOPLIST_FILE": "YES", "INFOPLIST_FILE": "Shields/Info.plist", "INFOPLIST_KEY_CFBundleDisplayName": title,
+                "LD_RUNPATH_SEARCH_PATHS": ["$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks"],
+                "PRODUCT_BUNDLE_IDENTIFIER": f"{BUNDLE_ID}.{name}", "PRODUCT_NAME": "$(TARGET_NAME)", "SKIP_INSTALL": "YES",
+                "SWIFT_EMIT_LOC_STRINGS": "NO", "TARGETED_DEVICE_FAMILY": "1,2"}
+    ext_target = uid("target:" + name)
+    objects[ext_target] = {"isa": "PBXNativeTarget", "buildConfigurationList": config_list(f"t:{name}:", {"Debug": settings, "Release": settings}),
+                           "buildPhases": phases, "buildRules": [], "dependencies": [], "name": target_name, "productName": target_name,
+                           "productReference": ext_product, "productType": "com.apple.product-type.app-extension"}
+    extension_targets.append(ext_target)
+    objects[uid("proxy:" + name)] = {"isa": "PBXContainerItemProxy", "containerPortal": uid("project"), "proxyType": "1",
+                                     "remoteGlobalIDString": ext_target, "remoteInfo": target_name}
+    objects[uid("dep:" + name)] = {"isa": "PBXTargetDependency", "target": ext_target, "targetProxy": uid("proxy:" + name)}
+    dependencies.append(uid("dep:" + name))
+    objects[uid("build:embed:" + name)] = {"isa": "PBXBuildFile", "fileRef": ext_product, "settings": {"ATTRIBUTES": ["RemoveHeadersOnCopy"]}}
+    embedded.append(uid("build:embed:" + name))
+embed_phase = uid("p:embed")
+objects[embed_phase] = {"isa": "PBXCopyFilesBuildPhase", "buildActionMask": "2147483647", "dstPath": "", "dstSubfolderSpec": "13",
+                        "files": embedded, "name": "Embed Foundation Extensions", "runOnlyForDeploymentPostprocessing": "0"}
+
 target = uid("target")
 objects[target] = {"isa": "PBXNativeTarget", "buildConfigurationList": config_list("t:", {"Debug": target_settings, "Release": target_settings}),
-                   "buildPhases": [sources_phase, frameworks_phase, resources_phase], "buildRules": [], "dependencies": [],
+                   "buildPhases": [sources_phase, frameworks_phase, resources_phase, embed_phase], "buildRules": [], "dependencies": dependencies,
                    "name": "Fjord", "packageProductDependencies": [cast_product], "productName": "Fjord", "productReference": product,
                    "productType": "com.apple.product-type.application"}
 project = uid("project")
@@ -119,9 +160,9 @@ objects[project] = {"isa": "PBXProject", "attributes": {"BuildIndependentTargets
                     "buildConfigurationList": config_list("p:", project_configs), "compatibilityVersion": "Xcode 14.0",
                     "developmentRegion": "en", "hasScannedForEncodings": "0", "knownRegions": ["en", "Base"],
                     "mainGroup": main_group, "packageReferences": [cast_package], "productRefGroup": products_group,
-                    "projectDirPath": "", "projectRoot": "", "targets": [target]}
+                    "projectDirPath": "", "projectRoot": "", "targets": [target] + extension_targets}
 
 os.makedirs(os.path.join(IOS, "Fjord.xcodeproj"), exist_ok=True)
 with open(os.path.join(IOS, "Fjord.xcodeproj", "project.pbxproj"), "w") as f:
     f.write("// !$*UTF8*$!\n" + ser({"archiveVersion": "1", "classes": {}, "objectVersion": "60", "objects": objects, "rootObject": project}, 1) + "\n")
-print(f"Fjord.xcodeproj: {len(sources)} sources, {len(resources)} resources")
+print(f"Fjord.xcodeproj: {len(sources)} sources, {len(resources)} resources, Safari blockers {', '.join(objects[t]['name'] for t in extension_targets)}")

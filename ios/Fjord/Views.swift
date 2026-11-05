@@ -693,6 +693,8 @@ struct SettingsView: View {
     @State private var hiddenSites = Hidden.sites
     @State private var confirmClear = false
     @State private var cleared = false
+    @State private var safari: [String: Bool] = [:]
+    @Environment(\.scenePhase) private var phase
 
     private var unlockMethod: String {
         let context = LAContext()
@@ -716,6 +718,16 @@ struct SettingsView: View {
                 } header: { Text("Protection") } footer: {
                     Text("Ads and trackers are blocked with the EasyList, EasyPrivacy and Peter Lowe lists, the same ones Fjord uses on computers. Fake sites are ones named to look like a popular site, like paypa1.com. Tracking redirects are links that pass through Google or Facebook before the real site. Randomising gives every site slightly different, made-up canvas, WebGL and audio readings, new each time Fjord starts, so sites can't use them to recognise you.")
                 }
+                Section {
+                    ForEach(Blocker.lists, id: \.self) { list in
+                        LabeledContent("Fjord \(list.capitalized)", value: safari[list] == true ? "On" : "Off")
+                    }
+                } header: { Text("Safari") } footer: {
+                    Text(safari.values.allSatisfy { $0 } && !safari.isEmpty
+                         ? "Safari blocks ads and trackers with Fjord's lists. It applies them itself, so Fjord never sees what you browse there."
+                         : "Fjord can block ads and trackers in Safari too: open Settings, then Apps, Safari, Extensions, and turn on Fjord Ads and Fjord Trackers. Safari applies the lists itself, so Fjord never sees what you browse there.")
+                }
+                .task(id: phase) { if phase == .active { safari = await SafariShields.states() } } // again when back from Settings
                 Section {
                     Toggle("Private YouTube player", isOn: $youtube)
                 } header: { Text("YouTube") } footer: {
