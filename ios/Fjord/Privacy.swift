@@ -127,6 +127,43 @@ enum Privacy {
         return nil
     }
 
+    // ---------- Private YouTube player ----------
+    // A YouTube video opens in YouTube's privacy-enhanced player on its own (youtube-nocookie.com): no recommendations,
+    // comments or personalised ads, and nothing in your YouTube history. The same as youtube.sys.mjs on the desktop.
+    static func youtubeVideo(_ url: URL) -> (id: String, start: Int)? {
+        guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false), let raw = parts.host?.lowercased() else { return nil }
+        let host = raw.replacingOccurrences(of: #"^(www|m)\."#, with: "", options: .regularExpression)
+        let query = { (name: String) in parts.queryItems?.first(where: { $0.name == name })?.value }
+        var id: String?
+        if host == "youtube.com" {
+            if parts.path == "/watch" { id = query("v") }
+            else if let m = parts.path.range(of: #"^/(shorts|live|embed)/[\w-]{11}"#, options: .regularExpression) {
+                id = String(parts.path[m].suffix(11))
+            }
+        } else if host == "youtu.be" {
+            id = String(parts.path.dropFirst().prefix(11))
+        }
+        guard let id, id.range(of: #"^[\w-]{11}$"#, options: .regularExpression) != nil else { return nil }
+        // t=90, t=90s or t=1m30s
+        var start = 0
+        if let t = query("t") ?? query("start"),
+           let m = try? Regex(#"^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$"#).wholeMatch(in: t) {
+            let n = { (i: Int) in m.output[i].substring.flatMap { Int($0) } ?? 0 }
+            start = n(1) * 3600 + n(2) * 60 + n(3)
+        }
+        return (id, start)
+    }
+    // YouTube's player refuses to play without a referrer ("Error 153"); its documentation asks apps to name themselves
+    static func youtubePlayer(_ video: (id: String, start: Int)) -> URLRequest {
+        var request = URLRequest(url: URL(string: "https://www.youtube-nocookie.com/embed/\(video.id)?autoplay=1&rel=0&playsinline=1"
+            + (video.start > 0 ? "&start=\(video.start)" : ""))!)
+        request.setValue("https://io.github.eliasmathisen.fjord/", forHTTPHeaderField: "Referer")
+        return request
+    }
+    static func isYouTube(_ host: String) -> Bool {
+        host.range(of: #"(^|\.)(youtube\.com|youtu\.be)$"#, options: .regularExpression) != nil
+    }
+
     static func isLocal(_ host: String) -> Bool {
         host == "localhost" || host.hasSuffix(".local") || host.range(of: #"^\d+\.\d+\.\d+\.\d+$"#, options: .regularExpression) != nil
     }
@@ -146,6 +183,10 @@ enum Privacy {
         assert(unwrapRedirect(URL(string: "https://www.google.com/url?q=https://en.wikipedia.org/wiki/Fjord&sa=D")!)?.host == "en.wikipedia.org")
         assert(unwrapRedirect(URL(string: "https://l.facebook.com/l.php?u=https%3A%2F%2Fexample.com%2F")!)?.absoluteString == "https://example.com/")
         assert(unwrapRedirect(URL(string: "https://www.google.com/search?q=fjord")!) == nil)
+        assert(youtubeVideo(URL(string: "https://www.youtube.com/watch?v=jNQXAC9IVRw&t=1m5s")!).map { $0.id == "jNQXAC9IVRw" && $0.start == 65 } == true)
+        assert(youtubeVideo(URL(string: "https://youtu.be/jNQXAC9IVRw")!)?.id == "jNQXAC9IVRw")
+        assert(youtubeVideo(URL(string: "https://m.youtube.com/shorts/jNQXAC9IVRw")!)?.id == "jNQXAC9IVRw")
+        assert(youtubeVideo(URL(string: "https://www.youtube.com/feed/trending")!) == nil)
     }
     #endif
 }

@@ -154,8 +154,8 @@ def branding():
     shutil.copy(os.path.join(ROOT, "src", "fjord", "branding", "logo.png"), os.path.join(RES, "logo.png"))
     icon = os.path.join(ASSETS, "AppIcon.appiconset")
     os.makedirs(icon, exist_ok=True)
-    subprocess.run(["sips", "-z", "1024", "1024", os.path.join(ROOT, "src", "icon.png"), "--out", os.path.join(icon, "icon-1024.png")],
-                   check=True, stdout=subprocess.DEVNULL)
+    # Full-bleed, without the macOS icon's margin and corners: iOS rounds it itself (drawn by tools/make-icon.py)
+    shutil.copy(os.path.join(IOS, "AppIcon.png"), os.path.join(icon, "icon-1024.png"))
     with open(os.path.join(icon, "Contents.json"), "w") as f:
         json.dump({"images": [{"filename": "icon-1024.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"}],
                    "info": {"author": "xcode", "version": 1}}, f, indent=1)
@@ -163,8 +163,21 @@ def branding():
         json.dump({"info": {"author": "xcode", "version": 1}}, f, indent=1)
 
 
+def trackers():
+    """Fjord's list of tracker companies and their domains (src/fjord/trackers.sys.mjs), for the new tab's stats"""
+    src = open(os.path.join(ROOT, "src", "fjord", "trackers.sys.mjs"), encoding="utf-8").read()
+    body = src[src.index("{", src.index("TRACKERS")):src.rindex("}") + 1]
+    body = re.sub(r"//[^\n]*", "", body)
+    body = re.sub(r",(\s*[}\]])", r"\1", body)  # trailing commas, which JSON doesn't allow
+    companies = json.loads(body)
+    with open(os.path.join(RES, "tracker-companies.json"), "w") as f:
+        json.dump(companies, f)
+    print(f"trackers: {len(companies)} companies")
+
+
 if __name__ == "__main__":
     os.makedirs(RES, exist_ok=True)
     lists("--refresh-lists" in sys.argv)
     photos()
     branding()
+    trackers()

@@ -7,7 +7,7 @@ import re
 
 IOS = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APP = os.path.join(IOS, "Fjord")
-TEAM = "LT7NW2Y8WH"  # the Apple Development team on the build Mac, for running on a real iPhone
+TEAM = "Y97RBJ2GP5"  # the Apple Development team on the build Mac (a free Personal Team), for running on a real iPhone
 BUNDLE_ID = "io.github.eliasmathisen.fjord"
 
 
@@ -64,7 +64,15 @@ objects[sources_phase] = {"isa": "PBXSourcesBuildPhase", "buildActionMask": "214
 objects[resources_phase] = {"isa": "PBXResourcesBuildPhase", "buildActionMask": "2147483647",
                             "files": [build_file("res:" + f, r) for f, r in zip(resources, resource_refs)] + [build_file("assets", assets_ref)],
                             "runOnlyForDeploymentPostprocessing": "0"}
-objects[frameworks_phase] = {"isa": "PBXFrameworksBuildPhase", "buildActionMask": "2147483647", "files": [], "runOnlyForDeploymentPostprocessing": "0"}
+# Google's Cast kit, for Chromecast in the private YouTube player (Cast.swift); Xcode fetches it on the first build.
+# The dynamic product: the static one needs its UI resources added by hand.
+cast_package, cast_product = uid("pkg:cast"), uid("pkgproduct:cast")
+objects[cast_package] = {"isa": "XCRemoteSwiftPackageReference", "repositoryURL": "https://github.com/googlecast/google-cast-ios-sdk",
+                         "requirement": {"kind": "upToNextMajorVersion", "minimumVersion": "4.8.6"}}
+objects[cast_product] = {"isa": "XCSwiftPackageProductDependency", "package": cast_package, "productName": "GoogleCastDynamic"}
+objects[uid("build:cast")] = {"isa": "PBXBuildFile", "productRef": cast_product}
+objects[frameworks_phase] = {"isa": "PBXFrameworksBuildPhase", "buildActionMask": "2147483647", "files": [uid("build:cast")],
+                             "runOnlyForDeploymentPostprocessing": "0"}
 
 common = {"ALWAYS_SEARCH_USER_PATHS": "NO", "CLANG_ENABLE_MODULES": "YES", "CLANG_ENABLE_OBJC_ARC": "YES",
           "ENABLE_STRICT_OBJC_MSGSEND": "YES", "GCC_NO_COMMON_BLOCKS": "YES", "IPHONEOS_DEPLOYMENT_TARGET": "17.0",
@@ -81,6 +89,7 @@ target_settings = {
     "CURRENT_PROJECT_VERSION": "1", "MARKETING_VERSION": "0.1", "GENERATE_INFOPLIST_FILE": "YES", "INFOPLIST_FILE": "Fjord/Info.plist",
     "INFOPLIST_KEY_CFBundleDisplayName": "Fjord", "INFOPLIST_KEY_LSApplicationCategoryType": "public.app-category.utilities",
     "INFOPLIST_KEY_NSFaceIDUsageDescription": "Fjord uses Face ID to unlock when App lock is on.",
+    "INFOPLIST_KEY_NSLocalNetworkUsageDescription": "Fjord looks for Chromecasts on your network while a YouTube video is open, so you can cast it to your TV.",
     "INFOPLIST_KEY_UIApplicationSceneManifest_Generation": "YES", "INFOPLIST_KEY_UILaunchScreen_Generation": "YES",
     "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone": "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight",
     "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad": "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight",
@@ -102,14 +111,15 @@ def config_list(prefix, configs):
 target = uid("target")
 objects[target] = {"isa": "PBXNativeTarget", "buildConfigurationList": config_list("t:", {"Debug": target_settings, "Release": target_settings}),
                    "buildPhases": [sources_phase, frameworks_phase, resources_phase], "buildRules": [], "dependencies": [],
-                   "name": "Fjord", "productName": "Fjord", "productReference": product,
+                   "name": "Fjord", "packageProductDependencies": [cast_product], "productName": "Fjord", "productReference": product,
                    "productType": "com.apple.product-type.application"}
 project = uid("project")
 objects[project] = {"isa": "PBXProject", "attributes": {"BuildIndependentTargetsInParallel": "1", "LastSwiftUpdateCheck": "2700",
                                                          "LastUpgradeCheck": "2700"},
                     "buildConfigurationList": config_list("p:", project_configs), "compatibilityVersion": "Xcode 14.0",
                     "developmentRegion": "en", "hasScannedForEncodings": "0", "knownRegions": ["en", "Base"],
-                    "mainGroup": main_group, "productRefGroup": products_group, "projectDirPath": "", "projectRoot": "", "targets": [target]}
+                    "mainGroup": main_group, "packageReferences": [cast_package], "productRefGroup": products_group,
+                    "projectDirPath": "", "projectRoot": "", "targets": [target]}
 
 os.makedirs(os.path.join(IOS, "Fjord.xcodeproj"), exist_ok=True)
 with open(os.path.join(IOS, "Fjord.xcodeproj", "project.pbxproj"), "w") as f:

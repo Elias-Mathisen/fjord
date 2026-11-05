@@ -41,8 +41,14 @@ final class Browser: ObservableObject {
         if tabs.isEmpty { newTab() }
     }
     func select(_ tab: Tab) {
+        current?.takeSnapshot()
         current = tab
         showingTabs = false
+    }
+    // The tabs screen shows each tab as it looked when you left it
+    func showTabs() {
+        current?.takeSnapshot()
+        showingTabs = true
     }
 
     // Text typed in the address bar: an address, or a search with the chosen engine
@@ -91,7 +97,16 @@ final class Tab: NSObject, ObservableObject, Identifiable {
     @Published var canGoForward = false
     @Published var warning: Lookalike?
     @Published var error: String?
+    // The colour the page's own top has (its theme colour, or its background), for the strip behind the status bar
+    @Published var topColor: UIColor?
+    // The bottom bar shrinks to the site's name while you scroll down, like Safari's
+    @Published var barCollapsed = false
+    @Published var snapshot: UIImage?
+    @Published var favicon: UIImage?
+    // You picked YouTube itself from the private player ("Watch on YouTube"); the tab stays on YouTube until it leaves
+    var onYouTube = false
     private var observations: [NSKeyValueObservation] = []
+    private var lastOffset: CGFloat = 0
 
     var isNewTab: Bool { url == nil && warning == nil && error == nil }
     var host: String? { url?.host }
@@ -102,8 +117,14 @@ final class Tab: NSObject, ObservableObject, Identifiable {
         // Ghost mode: this tab keeps nothing once it's gone
         config.websiteDataStore = UserDefaults.standard.bool(forKey: Setting.ghost) ? .nonPersistent() : .default()
         config.allowsInlineMediaPlayback = true
+        // Videos can go to an Apple TV or AirPlay speaker (the player's own AirPlay button, or the one in the toolbar),
+        // and float in picture-in-picture
+        config.allowsAirPlayForMediaPlayback = true
+        config.allowsPictureInPictureMediaPlayback = true
         webView = WKWebView(frame: .zero, configuration: config)
         super.init()
+        config.userContentController.add(MessageProxy(self), name: "fjordHide")
+        config.userContentController.add(MessageProxy(self), name: "fjordSeen")
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.allowsBackForwardNavigationGestures = true
@@ -112,14 +133,23 @@ final class Tab: NSObject, ObservableObject, Identifiable {
         #endif
         // KVO fires on the main thread
         observations = [
-            webView.observe(\.url) { [weak self] w, _ in MainActor.assumeIsolated { if w.url != nil { self?.url = w.url } } },
+            webView.observe(\.url) { [weak self] w, _ in MainActor.assumeIsolated {
+                guard let self, let now = w.url else { return }
+                self.url = now
+                self.videoInsideYouTube(now)
+                if Cast.video(inPlayer: now) != nil { Cast.shared.playerOpened(self) }
+            } },
             webView.observe(\.title) { [weak self] w, _ in MainActor.assumeIsolated { self?.title = w.title ?? "" } },
             webView.observe(\.estimatedProgress) { [weak self] w, _ in MainActor.assumeIsolated { self?.progress = w.estimatedProgress } },
             webView.observe(\.isLoading) { [weak self] w, _ in MainActor.assumeIsolated { self?.isLoading = w.isLoading } },
             webView.observe(\.canGoBack) { [weak self] w, _ in MainActor.assumeIsolated { self?.canGoBack = w.canGoBack } },
             webView.observe(\.canGoForward) { [weak self] w, _ in MainActor.assumeIsolated { self?.canGoForward = w.canGoForward } },
+            webView.observe(\.themeColor) { [weak self] w, _ in MainActor.assumeIsolated { self?.topColor = w.themeColor ?? w.underPageBackgroundColor } },
+            webView.observe(\.underPageBackgroundColor) { [weak self] w, _ in MainActor.assumeIsolated { self?.topColor = w.themeColor ?? w.underPageBackgroundColor } },
+            webView.scrollView.observe(\.contentOffset) { [weak self] s, _ in MainActor.assumeIsolated { self?.scrolled(s) } },
         ]
         applyBlocking(for: nil)
+        applyPageScripts(for: nil)
     }
 
     func load(_ url: URL) {
@@ -136,6 +166,92 @@ final class Tab: NSObject, ObservableObject, Identifiable {
         guard let browser, UserDefaults.standard.bool(forKey: Setting.blocking) else { return }
         if let host, !Shields.isOn(for: host) { return }
         for list in browser.blockLists { content.add(list) }
+    }
+
+    // The randomised fingerprint, and the parts of this site you hid (PageScripts), for the page about to load
+    func applyPageScripts(for host: String?) {
+        let content = webView.configuration.userContentController
+        content.removeAllUserScripts()
+        if UserDefaults.standard.bool(forKey: Setting.randomise) {
+            content.addUserScript(WKUserScript(source: PageScripts.randomise, injectionTime: .atDocumentStart, forMainFrameOnly: false))
+        }
+        content.addUserScript(WKUserScript(source: PageScripts.watcher, injectionTime: .atDocumentStart, forMainFrameOnly: false))
+        if let host, case let selectors = Hidden.selectors(for: host), !selectors.isEmpty {
+            content.addUserScript(WKUserScript(source: PageScripts.hidden(selectors, unlockScroll: Hidden.unlocksScroll(host)),
+                                               injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        }
+    }
+
+    // Down hides the bar to the site's name, up brings it back; so do the top and the very end of the page
+    private func scrolled(_ scroll: UIScrollView) {
+        let y = scroll.contentOffset.y + scroll.adjustedContentInset.top
+        defer { lastOffset = y }
+        guard scroll.isTracking || scroll.isDecelerating else { return }
+        let atEnd = y + scroll.bounds.height - scroll.adjustedContentInset.top - scroll.adjustedContentInset.bottom >= scroll.contentSize.height - 4
+        if y <= 0 || atEnd { if barCollapsed { barCollapsed = false } }
+        else if y - lastOffset > 6, !barCollapsed { barCollapsed = true }
+        else if y - lastOffset < -10, barCollapsed { barCollapsed = false }
+    }
+
+    func takeSnapshot() {
+        guard !isNewTab, webView.window != nil else { return }
+        let config = WKSnapshotConfiguration()
+        config.snapshotWidth = 420 // small: the tabs screen shows them at about half the screen's width
+        webView.takeSnapshot(with: config) { [weak self] image, _ in
+            Task { @MainActor in if let image { self?.snapshot = image } }
+        }
+    }
+
+    // The site's own icon for the tabs screen, fetched without cookies once the page has loaded
+    private static var icons: [String: UIImage] = [:]
+    private func loadFavicon() {
+        guard let host else { return }
+        if let known = Self.icons[host] { favicon = known; return }
+        webView.evaluateJavaScript(#"(document.querySelector('link[rel~="apple-touch-icon"]') || document.querySelector('link[rel~="icon"]') || {}).href || location.origin + "/favicon.ico""#) { [weak self] href, _ in
+            guard let href = href as? String, let url = URL(string: href), url.scheme == "https" else { return }
+            Task { @MainActor in
+                guard let (data, _) = try? await URLSession(configuration: .ephemeral).data(from: url), let image = UIImage(data: data) else { return }
+                Self.icons[host] = image
+                if self?.host == host { self?.favicon = image }
+            }
+        }
+    }
+
+    // Shields > Hide part of this page
+    func pickToHide() { webView.evaluateJavaScript(PageScripts.picker) }
+    fileprivate func received(_ message: WKScriptMessage) {
+        if message.name == "fjordSeen", let hosts = (message.body as? [String: Any])?["hosts"] as? [String], let page = host {
+            // Only what was really stopped: blocking on, Shields on here, and kept (not with Forget everything on)
+            if UserDefaults.standard.bool(forKey: Setting.blocking), Shields.isOn(for: page), webView.configuration.websiteDataStore.isPersistent {
+                TrackerStats.shared.record(hosts, on: page)
+            }
+            return
+        }
+        guard message.name == "fjordHide", let body = message.body as? [String: Any],
+              let site = body["site"] as? String, let selector = body["selector"] as? String else { return }
+        // With Forget everything on, nothing is kept: it's hidden for this visit only
+        guard webView.configuration.websiteDataStore.isPersistent else { return }
+        Hidden.add(selector, for: site, unlockScroll: body["unlockScroll"] as? Bool ?? false)
+    }
+
+    // Shields > Forget this site now: everything the site and its subdomains stored. The tab closes, taking the site
+    // out of its back history too. Shields' setting for the site stays.
+    func forget(_ done: @escaping @MainActor () -> Void) {
+        guard let host else { return }
+        let site = Shields.site(host)
+        let store = webView.configuration.websiteDataStore
+        let types = WKWebsiteDataStore.allWebsiteDataTypes()
+        store.fetchDataRecords(ofTypes: types) { records in
+            let mine = records.filter { $0.displayName == site || $0.displayName.hasSuffix("." + site) }
+            store.removeData(ofTypes: types, for: mine) { Task { @MainActor in done() } }
+        }
+    }
+
+    // A video opened inside YouTube's own page, which changes its address without loading a new page
+    private func videoInsideYouTube(_ url: URL) {
+        guard let host = url.host, Privacy.isYouTube(host) else { onYouTube = false; return }
+        guard UserDefaults.standard.bool(forKey: Setting.youtube), !onYouTube, let video = Privacy.youtubeVideo(url) else { return }
+        webView.load(Privacy.youtubePlayer(video))
     }
 
     // From the fake-site warning
@@ -166,6 +282,16 @@ extension Tab: WKNavigationDelegate, WKUIDelegate {
             load(target)
             return
         }
+        // A YouTube video opens in the private player, unless you came from it ("Watch on YouTube")
+        if defaults.bool(forKey: Setting.youtube), !onYouTube, let video = Privacy.youtubeVideo(url) {
+            if Self.fromPlayer(action) {
+                onYouTube = true
+            } else {
+                decisionHandler(.cancel)
+                webView.load(Privacy.youtubePlayer(video))
+                return
+            }
+        }
         // shortcut: http is always upgraded, with no fallback for the rare site without https; add a "Load anyway"
         // like the desktop's HTTPS-only page if that comes up
         if scheme == "http", let host = url.host, !Privacy.isLocal(host),
@@ -184,9 +310,16 @@ extension Tab: WKNavigationDelegate, WKUIDelegate {
                 return
             }
             applyBlocking(for: host)
+            applyPageScripts(for: host)
         }
         warning = nil
         decisionHandler(.allow)
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        favicon = nil
+        loadFavicon()
+        barCollapsed = false
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
@@ -199,8 +332,26 @@ extension Tab: WKNavigationDelegate, WKUIDelegate {
     // Links that open a new window open a new tab
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
                  for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-        if let url = action.request.url { browser?.newTab(url) }
+        if let url = action.request.url, let tab = browser?.newTab(url) {
+            // The private player's "Watch on YouTube" opens real YouTube in a new tab
+            tab.onYouTube = Self.fromPlayer(action)
+        }
         return nil
+    }
+
+    // WebKit leaves sourceFrame out for loads the app starts itself, though Swift sees it as always there
+    private static func fromPlayer(_ action: WKNavigationAction) -> Bool {
+        let source: WKFrameInfo? = action.sourceFrame
+        return source?.request.url?.host?.hasSuffix("youtube-nocookie.com") == true
+    }
+}
+
+// Messages from page scripts reach the tab through this, so the page's message list doesn't keep the tab alive
+private final class MessageProxy: NSObject, WKScriptMessageHandler {
+    weak var tab: Tab?
+    init(_ tab: Tab) { self.tab = tab }
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+        MainActor.assumeIsolated { tab?.received(message) }
     }
 }
 

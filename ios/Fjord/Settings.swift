@@ -10,11 +10,37 @@ enum Setting {
     static let appLock = "appLock"
     static let shieldsOff = "shieldsOffSites"
     static let openedAnyway = "lookalikesOpenedAnyway"
+    static let randomise = "randomiseFingerprint"
+    static let youtube = "privateYouTubePlayer"
+    static let hidden = "hiddenParts"           // [site: [selector]]
+    static let unlockScroll = "hiddenUnlocksScroll" // sites where a hidden part covered the page
 
     static func register() {
         UserDefaults.standard.register(defaults: [blocking: true, redirects: true, lookalikes: true, ghost: false,
-                                                  engine: "DuckDuckGo", appLock: false])
+                                                  engine: "DuckDuckGo", appLock: false, randomise: true, youtube: false])
     }
+}
+
+// Parts of sites you hid (Shields > Hide part of this page), by base domain like Shields
+enum Hidden {
+    private static var all: [String: [String]] { UserDefaults.standard.dictionary(forKey: Setting.hidden) as? [String: [String]] ?? [:] }
+    private static var unlocking: [String] { UserDefaults.standard.stringArray(forKey: Setting.unlockScroll) ?? [] }
+    static func selectors(for host: String) -> [String] { all[Shields.site(host)] ?? [] }
+    static func unlocksScroll(_ host: String) -> Bool { unlocking.contains(Shields.site(host)) }
+    static func add(_ selector: String, for host: String, unlockScroll: Bool) {
+        let site = Shields.site(host)
+        var list = all
+        list[site] = (list[site] ?? []).filter { $0 != selector } + [selector]
+        UserDefaults.standard.set(list, forKey: Setting.hidden)
+        if unlockScroll, !unlocking.contains(site) { UserDefaults.standard.set(unlocking + [site], forKey: Setting.unlockScroll) }
+    }
+    static func remove(_ site: String) {
+        var list = all
+        list[site] = nil
+        UserDefaults.standard.set(list, forKey: Setting.hidden)
+        UserDefaults.standard.set(unlocking.filter { $0 != site }, forKey: Setting.unlockScroll)
+    }
+    static var sites: [(site: String, count: Int)] { all.map { ($0.key, $0.value.count) }.sorted { $0.site < $1.site } }
 }
 
 struct SearchEngine: Identifiable {

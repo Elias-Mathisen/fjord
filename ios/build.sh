@@ -9,7 +9,9 @@ python3 tools/prepare.py "$@"
 python3 tools/make-project.py
 swift tools/check-lists.swift Fjord/Resources/ads.json Fjord/Resources/trackers.json
 log="$(mktemp)"
-if ! xcodebuild -project Fjord.xcodeproj -target Fjord -configuration Debug -sdk iphonesimulator \
+# A scheme rather than a target, so Xcode fetches the Swift package (Google's Cast kit) first; it's kept in build/
+if ! xcodebuild -project Fjord.xcodeproj -scheme Fjord -configuration Debug -sdk iphonesimulator \
+     -destination "generic/platform=iOS Simulator" -clonedSourcePackagesDirPath "$(pwd)/build/packages" \
      CODE_SIGNING_ALLOWED=NO SYMROOT="$(pwd)/build" build >"$log" 2>&1; then
   grep -E "error:|warning: .*nearly matches" "$log" | head -40
   echo "Build failed; full log: $log" >&2

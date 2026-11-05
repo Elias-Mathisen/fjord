@@ -15,5 +15,11 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Chromecasts on the local network, and ones running YouTube (receiver 233637DE), for Cast.swift -->
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_googlecast._tcp</string>
+		<string>_233637DE._googlecast._tcp</string>
+	</array>
 </dict>
 </plist>
