@@ -1,6 +1,7 @@
-# Publishes Fjord's version (src\fjord\version.txt) as a GitHub release. GitHub's machines build FjordSetup.exe
-# from the pushed code and SignPath signs it for Windows (.github\workflows\build.yml); this PC then adds Fjord's own
-# update signature, with the release key that never leaves it, and uploads both. Installed copies pick it up within
+# Publishes Fjord's version (src\fjord\version.txt) as a GitHub release. GitHub's machines build FjordSetup.exe,
+# Fjord.dmg, Fjord-x86_64.AppImage and the files Macs and Linux update from, from the pushed code, and SignPath signs
+# the Windows installer (.github\workflows\build.yml); this PC then adds Fjord's own update signatures, with the
+# release key that never leaves it, and uploads them all. Installed copies pick it up within
 # 3 hours; the website's download button points to it.
 # Run:  powershell -ExecutionPolicy Bypass -File tools\release.ps1 "What's new, in a sentence or two"
 param([Parameter(Mandatory)][string]$Notes)
@@ -44,6 +45,12 @@ $files = Join-Path $out 'fjord-files.tar.gz'
 # install.sh straight from the release files, so the copy people download matches the one the updater gets
 tar -xzf $files -C $out tools/install.sh
 $install = Join-Path $out 'tools\install.sh'
+foreach ($a in 'Fjord-mac', 'Fjord-linux') {
+    gh run download $run --repo $repo -n $a -D $out
+    if ($LASTEXITCODE) { throw "Downloading $a failed" }
+}
+$dmg = Join-Path $out 'Fjord.dmg'
+$appimage = Join-Path $out 'Fjord-x86_64.AppImage'
 
 # The signatures installed copies check before they update themselves (FjordSetup.cs SignedByFjord, install.sh)
 $rsa = New-Object Security.Cryptography.RSACryptoServiceProvider
@@ -55,6 +62,6 @@ if ((Get-AuthenticodeSignature $exe).Status -eq 'Valid') {
 } else {
     Write-Warning "This installer isn't signed for Windows yet (SignPath isn't set up), so Windows and antivirus programs may warn about it."
 }
-gh release create "v$version" $exe "$exe.sig" $files "$files.sig" $install --repo $repo --title "Fjord $version" --notes $Notes
+gh release create "v$version" $exe "$exe.sig" $files "$files.sig" $install $dmg $appimage --repo $repo --title "Fjord $version" --notes $Notes
 if ($LASTEXITCODE) { throw 'Publishing the release failed' }
 Write-Host "Released Fjord $version."

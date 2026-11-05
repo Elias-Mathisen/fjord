@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Fjord
+Comment=A private browser built on Firefox
+Exec=fjord
+Icon=fjord
+Categories=Network;WebBrowser;
+Terminal=false

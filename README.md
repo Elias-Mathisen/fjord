@@ -62,9 +62,10 @@ Linux, from this checkout:
 FJORD_SRC="$PWD" sh tools/install.sh
 ```
 
-People install the latest release on a Mac or Linux with
-`curl -fsSL https://github.com/Elias-Mathisen/fjord/releases/latest/download/install.sh | sh`, and remove it with
-`sh ~/Library/Application\ Support/Fjord/updater/install.sh --uninstall` (Mac) or
+People download `Fjord.dmg` (Mac) or `Fjord-x86_64.AppImage` (Linux, which installs Fjord the first time it's opened;
+`tools/appimage/`) from the latest release. Both keep Fjord up to date with `install.sh`, which also installs from a
+terminal (`curl -fsSL https://github.com/Elias-Mathisen/fjord/releases/latest/download/install.sh | sh`, for ARM
+Linux too) and removes Fjord with `sh ~/Library/Application\ Support/Fjord/updater/install.sh --uninstall` (Mac) or
 `sh ~/.local/share/fjord/updater/install.sh --uninstall` (Linux).
 
 ## Releasing
@@ -75,9 +76,10 @@ Fjord's version is in `src/fjord/version.txt`. Raise it, commit, then:
 powershell -ExecutionPolicy Bypass -File tools\release.ps1 "What's new"
 ```
 
-That pushes, has GitHub build `FjordSetup.exe` and the Mac and Linux files (`fjord-files.tar.gz`) from the pushed code
-(`.github/workflows/build.yml`), where SignPath signs the installer for Windows, then signs both with Fjord's release
-key on your PC and publishes them, with `install.sh`, as a GitHub release.
+That pushes, has GitHub build `FjordSetup.exe`, `Fjord.dmg`, `Fjord-x86_64.AppImage` and the files Macs and Linux
+update from (`fjord-files.tar.gz`) from the pushed code (`.github/workflows/build.yml`), where SignPath signs the
+installer for Windows, then signs the installer and `fjord-files.tar.gz` with Fjord's release key on your PC and
+publishes them all, with `install.sh`, as a GitHub release.
 Installed copies check for it every 3 hours and only take an update signed with that key. The key is made once by
 `tools\make-release-key.ps1`; its private half stays in `%APPDATA%\Fjord release\` and must be backed up.
 

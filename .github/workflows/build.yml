@@ -56,3 +56,78 @@ jobs:
         with:
           name: FjordSetup-signed
           path: signed/FjordSetup.exe
+
+  mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # The whole app, with Firefox from Mozilla (signature checked) and the new-tab photos, signed ad hoc
+      - name: Build Fjord.app
+        run: FJORD_SRC="$PWD" sh tools/install.sh --build "$RUNNER_TEMP/dmg/Fjord.app"
+
+      - name: Check it starts
+        run: |
+          app="$RUNNER_TEMP/dmg/Fjord.app"
+          perl -e 'alarm 180; exec @ARGV' "$app/Contents/MacOS/fjord" --headless --window-size=1440,900             --screenshot "$RUNNER_TEMP/mac.png" "file://$app/Contents/Resources/fjord/newtab.html"
+          test -s "$RUNNER_TEMP/mac.png"
+
+      - name: Make Fjord.dmg
+        run: |
+          # The check's Fjord can linger and keep files busy; hdiutil on GitHub's Macs also fails now and then
+          pkill -f "^$RUNNER_TEMP/dmg/Fjord.app/" || true
+          ln -s /Applications "$RUNNER_TEMP/dmg/Applications"
+          mkdir -p dist
+          for i in 1 2 3; do
+            # LZMA: smallest, opens on macOS 10.15 and later
+            hdiutil create -volname Fjord -srcfolder "$RUNNER_TEMP/dmg" -ov -format ULMO dist/Fjord.dmg && break
+            [ $i = 3 ] && exit 1
+            sleep 15
+          done
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Fjord-mac
+          path: dist/Fjord.dmg
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: check-mac
+          path: ${{ runner.temp }}/mac.png
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Fjord's files and install.sh inside one file; opening it installs Fjord (tools/appimage/AppRun)
+      - name: Build Fjord-x86_64.AppImage
+        run: |
+          d="$RUNNER_TEMP/Fjord.AppDir"
+          mkdir -p "$d/src" "$d/tools" dist
+          cp -R src/Fjord.cfg src/autoconfig.js src/policies.json src/icon.png src/fjord "$d/src/"
+          cp tools/install.sh "$d/tools/"
+          cp LICENSE "$d/"
+          cp tools/appimage/AppRun "$d/AppRun"
+          chmod +x "$d/AppRun"
+          cp src/icon.png "$d/fjord.png"
+          cp tools/appimage/fjord.desktop "$d/"
+          curl -fsSL -o "$RUNNER_TEMP/appimagetool" https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+          chmod +x "$RUNNER_TEMP/appimagetool"
+          ARCH=x86_64 "$RUNNER_TEMP/appimagetool" --appimage-extract-and-run "$d" dist/Fjord-x86_64.AppImage
+
+      # Opened the way a person would (installs Fjord, then starts it), with a picture of the new tab
+      - name: Check it installs and starts
+        run: |
+          APPIMAGE_EXTRACT_AND_RUN=1 MOZ_HEADLESS=1 timeout 900 dist/Fjord-x86_64.AppImage --window-size=1440,900             --screenshot "$RUNNER_TEMP/linux.png" "file://$HOME/.local/share/fjord/core/fjord/newtab.html"
+          test -s "$RUNNER_TEMP/linux.png"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Fjord-linux
+          path: dist/Fjord-x86_64.AppImage
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: check-linux
+          path: ${{ runner.temp }}/linux.png

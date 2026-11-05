@@ -4,6 +4,8 @@
 #   sh install.sh --auto        the updater's run every 3 hours: updates only when a new Fjord or Firefox is out
 #                               and Fjord is closed
 #   sh install.sh --uninstall   removes Fjord and its updater; bookmarks, history and passwords are kept
+#   sh install.sh --build <dir>/Fjord.app   Mac: builds the app for Fjord.dmg there, without installing it
+#   sh install.sh --register    sets up the updater from this copy of the script (the Mac app runs it once)
 # Downloads Firefox from Mozilla and checks Mozilla's signature, and Fjord's files from the latest GitHub release,
 # checked against Fjord's release key (the Mac app is then signed on this Mac, since adding Fjord breaks Mozilla's
 # signature). FJORD_SRC=<repo folder> uses that checkout's files instead (build-mac.sh); FJORD_RELEASES=<url> checks
@@ -29,18 +31,78 @@ if [ "$OS" = Darwin ]; then
   DATA="$HOME/Library/Application Support/Fjord"
   LOG="$HOME/Library/Logs/Fjord-update.log"
   ffversion() { sed -n 's/^Version=//p' "$1/Contents/Resources/application.ini" 2>/dev/null || true; }
-  running() { pgrep -f "$APP/Contents/MacOS/" >/dev/null; }
+  running() { pgrep -f "^$APP/Contents/MacOS/" >/dev/null; } # its programs, not commands that mention the path
 elif [ "$OS" = Linux ]; then
   DATA="${XDG_DATA_HOME:-$HOME/.local/share}/fjord"
   CORE="$DATA/core"
   LOG="$DATA/update.log"
   ffversion() { sed -n 's/^Version=//p' "$1/application.ini" 2>/dev/null || true; }
-  running() { pgrep -f "$CORE/" >/dev/null; }
+  running() { pgrep -f "^$CORE/" >/dev/null; }
 else
   fail "Fjord runs on Windows, Mac and Linux; this is $OS."
 fi
 UPDATER="$DATA/updater"
 LABEL=io.github.eliasmathisen.fjord.update
+
+# The updater: the script in $1, copied next to Fjord's data and run every 3 hours
+register() {
+  mkdir -p "$UPDATER"
+  # A new file, not over the old one: the updater's own run may still be reading it
+  [ "$1" = "$UPDATER/install.sh" ] || { cp "$1" "$UPDATER/install.sh.new" && mv -f "$UPDATER/install.sh.new" "$UPDATER/install.sh"; }
+  [ "$mode" != --auto ] || return 0
+  if [ "$OS" = Darwin ]; then
+    plist="$HOME/Library/LaunchAgents/$LABEL.plist"
+    mkdir -p "$HOME/Library/LaunchAgents" "$(dirname "$LOG")"
+    cat > "$plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$LABEL</string>
+  <key>ProgramArguments</key><array><string>/bin/sh</string><string>$UPDATER/install.sh</string><string>--auto</string></array>
+  <key>StartInterval</key><integer>10800</integer>
+  <key>RunAtLoad</key><true/>
+  <key>StandardOutPath</key><string>$LOG</string>
+  <key>StandardErrorPath</key><string>$LOG</string>
+</dict>
+</plist>
+EOF
+    launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
+    # The same job under Fjord's old name, from before 1.0.1
+    launchctl bootout "gui/$(id -u)/io.github.eliasmathisen.nocturne.update" 2>/dev/null || true
+    rm -f "$HOME/Library/LaunchAgents/io.github.eliasmathisen.nocturne.update.plist"
+    launchctl bootstrap "gui/$(id -u)" "$plist"
+  else
+    units="$HOME/.config/systemd/user"
+    mkdir -p "$units"
+    cat > "$units/fjord-update.service" <<EOF
+[Unit]
+Description=Fjord updater
+[Service]
+Type=oneshot
+ExecStart=/bin/sh "$UPDATER/install.sh" --auto
+StandardOutput=append:$LOG
+StandardError=append:$LOG
+EOF
+    cat > "$units/fjord-update.timer" <<EOF
+[Unit]
+Description=Check for Fjord and Firefox updates every 3 hours
+[Timer]
+OnStartupSec=5min
+OnUnitActiveSec=3h
+[Install]
+WantedBy=timers.target
+EOF
+    if ! { systemctl --user daemon-reload && systemctl --user enable --now fjord-update.timer; } 2>/dev/null; then
+      # No systemd for this user: cron instead
+      { crontab -l 2>/dev/null | grep -v fjord-update; echo "17 */3 * * * /bin/sh '$UPDATER/install.sh' --auto >> '$LOG' 2>&1 # fjord-update"; } |
+        crontab - 2>/dev/null || say "Couldn't set up automatic updates; run this again now and then to update Fjord."
+    fi
+  fi
+}
+
+# The Mac app from Fjord.dmg sets its updater up the first time it opens from Applications (Fjord.cfg)
+if [ "$mode" = --register ]; then register "$0"; exit 0; fi
 
 if [ "$mode" = --uninstall ]; then
   running && fail "Quit Fjord first, then run this again."
@@ -174,6 +236,7 @@ cp "$files/src/autoconfig.js" "$R/defaults/pref/"
 cp "$files/src/Fjord.cfg" "$R/"
 cp "$files/src/policies.json" "$R/distribution/"
 cp -R "$files/src/fjord/." "$R/fjord/"
+cp "$files/tools/install.sh" "$R/fjord/install.sh" # so the Mac app from Fjord.dmg can set up its updater (Fjord.cfg)
 mkdir -p "$R/fjord/photos"
 cp -R "$photos/." "$R/fjord/photos/"
 # The new-tab photos, from Unsplash (listed in photos.js): only ones not already here. A failed one is skipped (the
@@ -220,6 +283,11 @@ EOF
   xattr -cr "$stage"
   codesign --force --deep --sign - "$stage" 2>/dev/null
   codesign --verify --deep --strict "$stage"
+  if [ "$mode" = --build ]; then
+    ditto "$stage" "${2:?--build needs where to put Fjord.app}"
+    say "Built $2"
+    exit 0
+  fi
 
   running && fail "Quit Fjord first, then run this again."
   # Fjord was called Nocturne: carry its data over and remove the old app
@@ -263,61 +331,9 @@ EOF
   update-desktop-database "$apps" 2>/dev/null || true
 fi
 
-# ---------- The updater: this script, every 3 hours ----------
+# ---------- The updater ----------
 
-mkdir -p "$UPDATER"
-cp "$files/tools/install.sh" "$UPDATER/install.sh"
-if [ "$mode" != --auto ]; then
-  if [ "$OS" = Darwin ]; then
-    plist="$HOME/Library/LaunchAgents/$LABEL.plist"
-    mkdir -p "$HOME/Library/LaunchAgents" "$(dirname "$LOG")"
-    cat > "$plist" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key><string>$LABEL</string>
-  <key>ProgramArguments</key><array><string>/bin/sh</string><string>$UPDATER/install.sh</string><string>--auto</string></array>
-  <key>StartInterval</key><integer>10800</integer>
-  <key>RunAtLoad</key><true/>
-  <key>StandardOutPath</key><string>$LOG</string>
-  <key>StandardErrorPath</key><string>$LOG</string>
-</dict>
-</plist>
-EOF
-    launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
-    # The same job under Fjord's old name, from before 1.0.1
-    launchctl bootout "gui/$(id -u)/io.github.eliasmathisen.nocturne.update" 2>/dev/null || true
-    rm -f "$HOME/Library/LaunchAgents/io.github.eliasmathisen.nocturne.update.plist"
-    launchctl bootstrap "gui/$(id -u)" "$plist"
-  else
-    units="$HOME/.config/systemd/user"
-    mkdir -p "$units"
-    cat > "$units/fjord-update.service" <<EOF
-[Unit]
-Description=Fjord updater
-[Service]
-Type=oneshot
-ExecStart=/bin/sh "$UPDATER/install.sh" --auto
-StandardOutput=append:$LOG
-StandardError=append:$LOG
-EOF
-    cat > "$units/fjord-update.timer" <<EOF
-[Unit]
-Description=Check for Fjord and Firefox updates every 3 hours
-[Timer]
-OnStartupSec=5min
-OnUnitActiveSec=3h
-[Install]
-WantedBy=timers.target
-EOF
-    if ! { systemctl --user daemon-reload && systemctl --user enable --now fjord-update.timer; } 2>/dev/null; then
-      # No systemd for this user: cron instead
-      { crontab -l 2>/dev/null | grep -v fjord-update; echo "17 */3 * * * /bin/sh '$UPDATER/install.sh' --auto >> '$LOG' 2>&1 # fjord-update"; } |
-        crontab - 2>/dev/null || say "Couldn't set up automatic updates; run this again now and then to update Fjord."
-    fi
-  fi
-fi
+register "$files/tools/install.sh"
 
 if [ "$OS" = Darwin ]; then say "Fjord $fjord is installed in $(dirname "$APP"). Open it from Launchpad or Spotlight."
 else say "Fjord $fjord is installed. Open it from your apps menu."; fi
