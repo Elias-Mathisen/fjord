@@ -144,7 +144,7 @@ if [ "$mode" = --auto ]; then
   newer "$fjord" "$have_fjord" || [ "$ff" != "$have_ff" ] || exit 0
   running && exit 0
 fi
-running && fail "Quit Fjord first, then run this again."
+[ "$mode" = --build ] || ! running || fail "Quit Fjord first, then run this again." # a build leaves it alone
 
 if [ -z "${FJORD_SRC:-}" ]; then
   url="$(asset fjord-files.tar.gz)" sig="$(asset fjord-files.tar.gz.sig)"
@@ -249,7 +249,9 @@ if [ "$OS" = Darwin ]; then
   plutil -replace CFBundleDisplayName -string Fjord "$P"
   plutil -replace CFBundleIdentifier -string io.github.eliasmathisen.fjord "$P"
   plutil -replace CFBundleIconFile -string fjord.icns "$P"
-  plutil -remove CFBundleIconName "$P" 2>/dev/null || true # else macOS shows Firefox's icon from Assets.car
+  plutil -remove CFBundleIconName "$P" 2>/dev/null || true
+  # Assets.car holds only Firefox's icon, which macOS 27 still shows while the app starts
+  rm -f "$R/Assets.car" "$R/firefox.icns"
   # Own data folder (~/Library/Application Support/Fjord): macOS only lets the real Firefox create a "Firefox" folder
   # there, so a launcher starts Firefox with an application.ini that says Profile=Fjord
   sed -e '/^\[App\]/a\
@@ -259,6 +261,9 @@ Profile=Fjord
 #!/bin/sh
 # Fjord launcher: Firefox with Fjord's application.ini (-app must come first)
 dir="$(cd "$(dirname "$0")" && pwd)"
+# Firefox's crash helper looks in the real Firefox's data folder, which macOS blocks with a "Data Access Blocked"
+# warning; Fjord sends no crash reports anyway
+export MOZ_CRASHREPORTER_DISABLE=1
 exec "$dir/firefox" -app "$dir/../Resources/browser/application.ini" "$@"
 EOF
   chmod +x "$stage/Contents/MacOS/fjord"

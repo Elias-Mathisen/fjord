@@ -76,11 +76,11 @@ jobs:
         run: |
           # The check's Fjord can linger and keep files busy; hdiutil on GitHub's Macs also fails now and then
           pkill -f "^$RUNNER_TEMP/dmg/Fjord.app/" || true
-          ln -s /Applications "$RUNNER_TEMP/dmg/Applications"
+          # dmgbuild lays out the window (tools/dmg/settings.py) without having to drive Finder
+          python3 -m venv "$RUNNER_TEMP/venv" && "$RUNNER_TEMP/venv/bin/pip" install -q dmgbuild==1.6.5
           mkdir -p dist
           for i in 1 2 3; do
-            # LZMA: smallest, opens on macOS 10.15 and later
-            hdiutil create -volname Fjord -srcfolder "$RUNNER_TEMP/dmg" -ov -format ULMO dist/Fjord.dmg && break
+            "$RUNNER_TEMP/venv/bin/dmgbuild" -s tools/dmg/settings.py -D app="$RUNNER_TEMP/dmg/Fjord.app" Fjord dist/Fjord.dmg && break
             [ $i = 3 ] && exit 1
             sleep 15
           done
