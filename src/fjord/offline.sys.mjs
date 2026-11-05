@@ -35,6 +35,18 @@ export async function dressOfflinePage(win, { offlineMode, best, saveBest }) {
   theme();
   dark.addEventListener("change", theme);
   img.replaceWith(canvas);
+  // Room between the drawing and the words (Firefox's fox had white space of its own)
+  canvas.parentElement.style.marginInlineEnd = "56px";
+
+  // Fjord's font, Geist (fonts/Geist-Variable.woff2), handed to the page as data for the same reason as the drawing
+  try {
+    const font = await (await fetch("resource://fjord/fonts/Geist-Variable.woff2")).arrayBuffer();
+    const face = new win.FontFace("Geist", Cu.cloneInto(font, win), { weight: "100 900" });
+    doc.fonts.add(await face.load());
+    card.querySelector("article").style.fontFamily = '"Geist", system-ui, sans-serif';
+  } catch (e) {
+    Cu.reportError(e); // keeps Firefox's font
+  }
 
   let host = "";
   try { host = new URL(new URLSearchParams(doc.documentURI.split("?")[1]).get("u")).hostname; } catch {}
