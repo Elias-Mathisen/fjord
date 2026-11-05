@@ -31,13 +31,13 @@ if [ "$OS" = Darwin ]; then
   DATA="$HOME/Library/Application Support/Fjord"
   LOG="$HOME/Library/Logs/Fjord-update.log"
   ffversion() { sed -n 's/^Version=//p' "$1/Contents/Resources/application.ini" 2>/dev/null || true; }
-  running() { pgrep -f "$APP/Contents/MacOS/" >/dev/null; }
+  running() { pgrep -f "^$APP/Contents/MacOS/" >/dev/null; } # its programs, not commands that mention the path
 elif [ "$OS" = Linux ]; then
   DATA="${XDG_DATA_HOME:-$HOME/.local/share}/fjord"
   CORE="$DATA/core"
   LOG="$DATA/update.log"
   ffversion() { sed -n 's/^Version=//p' "$1/application.ini" 2>/dev/null || true; }
-  running() { pgrep -f "$CORE/" >/dev/null; }
+  running() { pgrep -f "^$CORE/" >/dev/null; }
 else
   fail "Fjord runs on Windows, Mac and Linux; this is $OS."
 fi

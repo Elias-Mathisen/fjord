@@ -14,7 +14,7 @@ tell() {
   else notify-send Fjord "$2" 2>/dev/null || echo "$2" >&2; fi
 }
 
-if { [ -z "$have" ] || newer "$mine" "$have"; } && ! pgrep -f "$data/core/" >/dev/null; then
+if { [ -z "$have" ] || newer "$mine" "$have"; } && ! pgrep -f "^$data/core/" >/dev/null; then
   log="$(mktemp)"
   run_install() { FJORD_SRC="$here" sh "$here/tools/install.sh" >"$log" 2>&1; echo $? >"$log.done"; }
   if command -v zenity >/dev/null; then

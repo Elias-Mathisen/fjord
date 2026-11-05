@@ -76,7 +76,7 @@ jobs:
         run: |
           ln -s /Applications "$RUNNER_TEMP/dmg/Applications"
           mkdir -p dist
-          hdiutil create -volname Fjord -srcfolder "$RUNNER_TEMP/dmg" -ov -format UDZO dist/Fjord.dmg
+          hdiutil create -volname Fjord -srcfolder "$RUNNER_TEMP/dmg" -ov -format ULMO dist/Fjord.dmg # LZMA: smallest, opens on macOS 10.15 and later
 
       - uses: actions/upload-artifact@v7
         with:

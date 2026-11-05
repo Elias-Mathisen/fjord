@@ -157,6 +157,3 @@ kbd { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 6
   .row { gap: 10px; padding: 28px 0; }
   .spec { margin-top: 6px; }
 }
-/* Install command for Mac and Linux: selects whole on one click, wraps on phones */
-.cmd { display: block; max-width: 100%; padding: 10px 14px; border-radius: 10px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); font: 13px/1.5 var(--mono); overflow-wrap: anywhere; user-select: all; }
-.copy { border: 0; font-family: inherit; cursor: pointer; }
