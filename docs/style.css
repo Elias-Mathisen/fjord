@@ -104,6 +104,8 @@ p { margin: 0; text-wrap: pretty; }
 .swap dt { color: var(--muted); font-size: 14px; }
 .swap dd { margin: 0; }
 kbd { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 6px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 2px 0 var(--line); font: 13px/1.6 var(--mono); text-align: center; }
+/* A right-click menu item, picked */
+.menu-item { padding: 5px 10px; margin: 0 -6px; border-radius: 7px; background: var(--bg); }
 .swatch { display: inline-flex; align-items: center; gap: 10px; }
 .swatch i { width: 22px; height: 22px; border-radius: 6px; background: var(--dark); }
 
@@ -126,13 +128,6 @@ kbd { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 6
 .platforms .row { align-items: center; }
 .platforms .soon :is(h3, p) { color: var(--muted); }
 .note { max-width: 620px; margin-top: 24px; }
-/* Screenshots of the real browser above the downloads: two side by side, the ski jump as a strip under them */
-.shots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 24px; margin-top: clamp(32px, 5vw, 48px); }
-.shots figure { display: grid; gap: 12px; margin: 0; }
-.shots img { width: 100%; height: auto; border-radius: 14px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgb(0 0 0 / 0.04); }
-.shots figcaption { color: var(--muted); font-size: 15px; }
-.shots figcaption b { color: var(--text); font-weight: 600; }
-.shot-wide { grid-column: 1 / -1; }
 
 /* Questions */
 .faq { max-width: 760px; padding-bottom: 24px; }
@@ -159,7 +154,7 @@ kbd { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 6
   .nav nav { display: none; }
   .nav .btn { margin-inline-start: auto; }
   .hero { padding-top: 120px; }
-  .row, .split, .more, .feature-grid, .chapter, .shots { grid-template-columns: 1fr; }
+  .row, .split, .more, .feature-grid, .chapter { grid-template-columns: 1fr; }
   .chapter:nth-child(even) .chapter-text { order: 0; }
   .row { gap: 10px; padding: 28px 0; }
   .spec { margin-top: 6px; }
