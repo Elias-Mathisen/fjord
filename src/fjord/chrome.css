@@ -456,6 +456,13 @@
   .ns-lock-card .ns-primary { padding: 11px 26px; }
   .ns-lock-card .ns-quiet { margin-top: 12px !important; }
 
+  /* What's new, after an update */
+  .ns-whatsnew { width: min(460px, calc(100vw - 32px)); padding: 28px; }
+  .ns-whatsnew .ns-about { margin: 0 0 20px; }
+  .ns-whatsnew .ns-about img { width: 48px; height: 48px; border-radius: 11px; }
+  .ns-whatsnew .ns-summary li { font-size: 14px; }
+  .ns-whatsnew .ns-actions { margin-top: 22px; }
+
   /* Memory saver: unloaded tabs are dimmed */
   .tabbrowser-tab[pending] :is(.tab-icon-image, .tab-label) { opacity: 0.55; }
 
@@ -631,6 +638,8 @@
     cursor: pointer;
   }
   .ns-shields .ns-link-row:hover { background: var(--n-hover); }
+  .ns-shields .ns-forget { display: grid; gap: 2px; margin-bottom: -10px; }
+  .ns-shields .ns-forget span { color: var(--n-muted); font-size: 12px; line-height: 1.4; }
   .ns-shields .ns-head .ns-count { font-size: 13px; color: var(--n-muted); }
   .ns-shields .ns-head .ns-count b { color: var(--n-text); }
 

@@ -126,6 +126,13 @@ kbd { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 6
 .platforms .row { align-items: center; }
 .platforms .soon :is(h3, p) { color: var(--muted); }
 .note { max-width: 620px; margin-top: 24px; }
+/* Screenshots of the real browser above the downloads: two side by side, the ski jump as a strip under them */
+.shots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 24px; margin-top: clamp(32px, 5vw, 48px); }
+.shots figure { display: grid; gap: 12px; margin: 0; }
+.shots img { width: 100%; height: auto; border-radius: 14px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgb(0 0 0 / 0.04); }
+.shots figcaption { color: var(--muted); font-size: 15px; }
+.shots figcaption b { color: var(--text); font-weight: 600; }
+.shot-wide { grid-column: 1 / -1; }
 
 /* Questions */
 .faq { max-width: 760px; padding-bottom: 24px; }
@@ -152,7 +159,7 @@ kbd { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 6
   .nav nav { display: none; }
   .nav .btn { margin-inline-start: auto; }
   .hero { padding-top: 120px; }
-  .row, .split, .more, .feature-grid, .chapter { grid-template-columns: 1fr; }
+  .row, .split, .more, .feature-grid, .chapter, .shots { grid-template-columns: 1fr; }
   .chapter:nth-child(even) .chapter-text { order: 0; }
   .row { gap: 10px; padding: 28px 0; }
   .spec { margin-top: 6px; }

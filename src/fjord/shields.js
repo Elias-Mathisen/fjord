@@ -152,6 +152,23 @@
     return box;
   }
 
+  // Everything the site (and its subdomains) stored, and its history. Saved passwords and its Shields settings stay.
+  // The tab moves to a new tab, so the page can't store it all again.
+  // shortcut: other open tabs on the site keep running and can save things again; close them first if that matters
+  async function forgetSite(host) {
+    const domain = privacy.baseDomain(host);
+    const browser = gBrowser.selectedBrowser;
+    const F = Ci.nsIClearDataService;
+    const failed = await new Promise(done => Services.clearData.deleteDataFromSite(domain, {}, true,
+      F.CLEAR_COOKIES_AND_SITE_DATA | F.CLEAR_ALL_CACHES | F.CLEAR_HISTORY, done));
+    browser.fixupAndLoadURIString(FJORD.newtab, {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY,
+    });
+    Fjord.toast(browser, failed ? `Some of ${domain}'s data couldn't be deleted. Try again after closing its other tabs.`
+      : `Fjord forgot ${domain}: its cookies, saved data and history are gone.`);
+  }
+
   async function render() {
     const host = site();
     const kids = [];
@@ -173,6 +190,10 @@
         if (level !== "lockdown") kids.push(ghost
           ? toggle("Stay signed in here", hasPerm("persist-data-on-shutdown", ALLOW_ACTION), on => setPerm("persist-data-on-shutdown", ALLOW_ACTION, on))
           : toggle("Forget this site when I close Fjord", hasPerm("cookie", SESSION), on => setPerm("cookie", SESSION, on)));
+        const forget = h("button", { class: "ns-link-row ns-forget" }, h("b", {}, "Forget this site now"),
+          h("span", {}, "Deletes its cookies, saved data and history now. You'll be signed out."));
+        forget.addEventListener("click", () => { panel.hidePopup(); forgetSite(host).catch(console.error); });
+        kids.push(forget);
       } else {
         kids.push(h("p", { class: "ns-quiet" }, "Private window: history and cookies are deleted when you close it."));
       }

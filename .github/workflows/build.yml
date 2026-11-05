@@ -95,13 +95,21 @@ jobs:
           name: check-mac
           path: ${{ runner.temp }}/mac.png
 
+  # Once on GitHub's Intel and once on its ARM machines; each AppImage installs the Firefox for its own kind of computer
   linux:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5
 
       # Fjord's files and install.sh inside one file; opening it installs Fjord (tools/appimage/AppRun)
-      - name: Build Fjord-x86_64.AppImage
+      - name: Build Fjord-${{ matrix.arch }}.AppImage
         run: |
           d="$RUNNER_TEMP/Fjord.AppDir"
           mkdir -p "$d/src" "$d/tools" dist
@@ -112,22 +120,22 @@ jobs:
           chmod +x "$d/AppRun"
           cp src/icon.png "$d/fjord.png"
           cp tools/appimage/fjord.desktop "$d/"
-          curl -fsSL -o "$RUNNER_TEMP/appimagetool" https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+          curl -fsSL -o "$RUNNER_TEMP/appimagetool" https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-${{ matrix.arch }}.AppImage
           chmod +x "$RUNNER_TEMP/appimagetool"
-          ARCH=x86_64 "$RUNNER_TEMP/appimagetool" --appimage-extract-and-run "$d" dist/Fjord-x86_64.AppImage
+          ARCH=${{ matrix.arch }} "$RUNNER_TEMP/appimagetool" --appimage-extract-and-run "$d" dist/Fjord-${{ matrix.arch }}.AppImage
 
       # Opened the way a person would (installs Fjord, then starts it), with a picture of the new tab
       - name: Check it installs and starts
         run: |
-          APPIMAGE_EXTRACT_AND_RUN=1 MOZ_HEADLESS=1 timeout 900 dist/Fjord-x86_64.AppImage --window-size=1440,900             --screenshot "$RUNNER_TEMP/linux.png" "file://$HOME/.local/share/fjord/core/fjord/newtab.html"
-          test -s "$RUNNER_TEMP/linux.png"
+          APPIMAGE_EXTRACT_AND_RUN=1 MOZ_HEADLESS=1 timeout 900 dist/Fjord-${{ matrix.arch }}.AppImage --window-size=1440,900             --screenshot "$RUNNER_TEMP/linux-${{ matrix.arch }}.png" "file://$HOME/.local/share/fjord/core/fjord/newtab.html"
+          test -s "$RUNNER_TEMP/linux-${{ matrix.arch }}.png"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: Fjord-linux
-          path: dist/Fjord-x86_64.AppImage
+          name: Fjord-linux-${{ matrix.arch }}
+          path: dist/Fjord-${{ matrix.arch }}.AppImage
 
       - uses: actions/upload-artifact@v7
         with:
-          name: check-linux
-          path: ${{ runner.temp }}/linux.png
+          name: check-linux-${{ matrix.arch }}
+          path: ${{ runner.temp }}/linux-${{ matrix.arch }}.png

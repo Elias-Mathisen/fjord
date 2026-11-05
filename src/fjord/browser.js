@@ -782,6 +782,11 @@
   if (FJORD.sessionChecked) return;
   FJORD.sessionChecked = true;
 
+  // Reader view in Fjord's look (reader.css); registered sheets reach every tab
+  const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+  const readerSheet = Services.io.newURI("resource://fjord/reader.css");
+  if (!sss.sheetRegistered(readerSheet, sss.AUTHOR_SHEET)) sss.loadAndRegisterSheet(readerSheet, sss.AUTHOR_SHEET);
+
   // Shields replaces uBlock's toolbar button; uBlock moves to the extensions menu once
   if (!prefs.getBoolPref("fjord.ublock.moved", false)) {
     CustomizableUI.addWidgetToArea("ublock0_raymondhill_net-browser-action", CustomizableUI.AREA_ADDONS);
@@ -825,5 +830,42 @@
       label: `Fjord hasn't updated in ${Math.round(ageDays)} days and may be missing security fixes. Reinstall Fjord or run its updater to fix this.`,
       priority: gNotificationBox.PRIORITY_WARNING_HIGH,
     });
+  }
+
+  // ---------- What's new, once after Fjord updated itself ----------
+  // whatsnew.json has a few lines per version; release.ps1 uses the same lines for the release notes
+  const newer = (a, b) => {
+    const [x, y] = [a, b].map(v => v.split(".").map(Number));
+    for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+    return false;
+  };
+  (async () => {
+    const now = await fjordVersion();
+    const seen = prefs.getStringPref("fjord.version.seen", "");
+    if (!now || seen === now) return;
+    prefs.setStringPref("fjord.version.seen", now);
+    // A new install has nothing to catch up on. Copies from before 1.0.5 never saved a version: they get this one's lines
+    if (!prefs.getBoolPref("fjord.setup.done", false) || PrivateBrowsingUtils.isWindowPrivate(window)) return;
+    const notes = await fetch("resource://fjord/whatsnew.json").then(r => r.json());
+    const lines = Object.entries(notes).filter(([v]) => seen ? newer(v, seen) && !newer(v, now) : v === now).flatMap(([, l]) => l);
+    if (lines.length) showWhatsNew(now, lines);
+  })().catch(console.error);
+
+  function showWhatsNew(version, lines) {
+    if (!claimOverlay()) return;
+    const close = () => { overlay.remove(); FJORD.overlayOpen = false; };
+    const overlay = openOverlay("What's new in Fjord", h("div", { class: "ns-card ns-whatsnew" },
+      h("div", { class: "ns-about" }, h("img", { src: LOGO, alt: "" }),
+        h("span", {}, h("h2", {}, `Fjord updated to ${version}`), h("span", {}, "Here's what's new."))),
+      h("ul", { class: "ns-summary" }, ...lines.map(t => h("li", { class: "ns-yes" }, icon("check"), t))),
+      h("div", { class: "ns-actions" },
+        btn("ns-link", "All changes", () => {
+          close();
+          gBrowser.selectedTab = gBrowser.addTrustedTab(`https://github.com/Elias-Mathisen/fjord/releases/tag/v${version}`);
+        }),
+        btn("ns-primary", "Got it", close))));
+    on(overlay, "keydown", e => { if (e.key === "Escape") close(); });
+    on(overlay, "click", e => { if (e.target === overlay) close(); });
+    overlay.querySelector(".ns-primary").focus();
   }
 })();

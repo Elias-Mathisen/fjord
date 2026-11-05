@@ -10,6 +10,11 @@
   // is set to work offline): Fjord's own drawing and words, and the ski jump game (offline.sys.mjs)
   addEventListener("DOMContentLoaded", e => {
     const doc = e.target, win = doc.defaultView;
+    // Reader view in Fjord's font (its colours are in reader.css)
+    if (win && doc.documentURI.startsWith("about:reader")) {
+      ChromeUtils.importESModule("resource://fjord/offline.sys.mjs").addFjordFont(win);
+      return;
+    }
     const code = /^about:neterror\?e=(\w+)/.exec(doc.documentURI)?.[1];
     if (!win || win.browsingContext?.parent || !code || !doc.body) return; // the tab's page, not a frame in it
     if (code !== "netOffline" && !(["dnsNotFound", "netTimeout", "connectionFailure", "netReset"].includes(code) && !win.navigator.onLine)) return;

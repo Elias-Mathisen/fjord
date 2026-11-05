@@ -1,6 +1,6 @@
 #!/bin/sh
-# Fjord for Linux as one file to open (Fjord-x86_64.AppImage, built by .github/workflows/build.yml). The first time,
-# it installs Fjord for this user from the files inside it with tools/install.sh (Firefox comes from Mozilla, checked
+# Fjord for Linux as one file to open (Fjord-x86_64.AppImage, or Fjord-aarch64.AppImage for ARM; built by
+# .github/workflows/build.yml). The first time, it installs Fjord for this user from the files inside it with tools/install.sh (Firefox comes from Mozilla, checked
 # against Mozilla's signature), showing a progress window, then opens Fjord. After that Fjord is in the apps menu and
 # updates itself, so this file can be deleted; opening it again just opens Fjord.
 here="$(dirname "$(readlink -f "$0")")"

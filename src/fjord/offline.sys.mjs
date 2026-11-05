@@ -50,15 +50,7 @@ export async function dressOfflinePage(win, { offlineMode, best, saveBest }) {
   // Room between the drawing and the words (Firefox's fox had white space of its own)
   canvas.parentElement.style.marginInlineEnd = "56px";
 
-  // Fjord's font, Geist (fonts/Geist-Variable.woff2), handed to the page as data for the same reason as the drawing
-  try {
-    const font = await (await fetch("resource://fjord/fonts/Geist-Variable.woff2")).arrayBuffer();
-    const face = new win.FontFace("Geist", Cu.cloneInto(font, win), { weight: "100 900" });
-    doc.fonts.add(await face.load());
-    card.querySelector("article").style.fontFamily = '"Geist", system-ui, sans-serif';
-  } catch (e) {
-    Cu.reportError(e); // keeps Firefox's font
-  }
+  if (await addFjordFont(win)) card.querySelector("article").style.fontFamily = '"Geist", system-ui, sans-serif';
 
   let host = "";
   try { host = new URL(new URLSearchParams(doc.documentURI.split("?")[1]).get("u")).hostname; } catch {}
@@ -76,6 +68,20 @@ export async function dressOfflinePage(win, { offlineMode, best, saveBest }) {
   say("h3", "What you can do");
   say("#whatCanYouDo", offlineMode ? "Press Try Again to go back online." : "Check your Wi-Fi or network cable, then press Try Again.",
     " Until then, there's the ski jump above: press Space.");
+}
+
+// Fjord's font, Geist (fonts/Geist-Variable.woff2), for Firefox's own pages (this one, reader view), which only load
+// fonts from chrome: addresses Fjord's aren't: handed to the page as data, like the drawing. False keeps Firefox's font.
+export async function addFjordFont(win) {
+  try {
+    const font = await (await fetch("resource://fjord/fonts/Geist-Variable.woff2")).arrayBuffer();
+    const face = new win.FontFace("Geist", Cu.cloneInto(font, win), { weight: "100 900" });
+    win.document.fonts.add(await face.load());
+    return true;
+  } catch (e) {
+    Cu.reportError(e);
+    return false;
+  }
 }
 
 // Checks every 50 ms for up to 3 s

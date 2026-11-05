@@ -10,7 +10,7 @@ follow every Firefox security update the day it ships.
 ## What's in it
 
 - **Shields** in the address bar: a protection dial per site (Off, Standard, Strict, Lockdown) and which companies the
-  page tried to share your visit with
+  page tried to share your visit with, and **Forget this site now**
 - uBlock Origin built in, Firefox's strict tracker blocking, fingerprinting protection, HTTPS-only, Secure DNS (Quad9)
 - **Ghost mode** (forget everything on close, with per-site exceptions), **Mist tabs** (throwaway tabs)
 - Warnings for **lookalike sites** (paypa1.com), **clipboard hijacking**, sites using your camera, microphone or location
@@ -18,7 +18,8 @@ follow every Firefox security update the day it ships.
 - **Fjord's connections**: a live list of every connection Fjord itself makes
 - Sidebar apps (Spotify, WhatsApp…), Workspaces, Memory saver, design tools (colour picker, font finder, asset saver,
   full-page screenshots)
-- A new tab with 100 hand-picked Unsplash photos and privacy stats
+- A new tab with 100 hand-picked Unsplash photos and privacy stats, reader view in Fjord's font, and a ski jump game
+  when you're offline
 
 ## Layout
 
@@ -62,21 +63,22 @@ Linux, from this checkout:
 FJORD_SRC="$PWD" sh tools/install.sh
 ```
 
-People download `Fjord.dmg` (Mac) or `Fjord-x86_64.AppImage` (Linux, which installs Fjord the first time it's opened;
-`tools/appimage/`) from the latest release. Both keep Fjord up to date with `install.sh`, which also installs from a
+People download `Fjord.dmg` (Mac) or `Fjord-x86_64.AppImage` / `Fjord-aarch64.AppImage` (Linux on Intel and AMD, or
+ARM, which installs Fjord the first time it's opened; `tools/appimage/`) from the latest release. Both keep Fjord up to date with `install.sh`, which also installs from a
 terminal (`curl -fsSL https://github.com/Elias-Mathisen/fjord/releases/latest/download/install.sh | sh`, for ARM
 Linux too) and removes Fjord with `sh ~/Library/Application\ Support/Fjord/updater/install.sh --uninstall` (Mac) or
 `sh ~/.local/share/fjord/updater/install.sh --uninstall` (Linux).
 
 ## Releasing
 
-Fjord's version is in `src/fjord/version.txt`. Raise it, commit, then:
+Fjord's version is in `src/fjord/version.txt`. Raise it, add a few lines on what's new in that version to
+`src/fjord/whatsnew.json` (Fjord shows them once after it updates, and they become the release notes), commit, then:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\release.ps1 "What's new"
+powershell -ExecutionPolicy Bypass -File tools\release.ps1
 ```
 
-That pushes, has GitHub build `FjordSetup.exe`, `Fjord.dmg`, `Fjord-x86_64.AppImage` and the files Macs and Linux
+That pushes, has GitHub build `FjordSetup.exe`, `Fjord.dmg`, both AppImages and the files Macs and Linux
 update from (`fjord-files.tar.gz`) from the pushed code (`.github/workflows/build.yml`), where SignPath signs the
 installer for Windows, then signs the installer and `fjord-files.tar.gz` with Fjord's release key on your PC and
 publishes them all, with `install.sh`, as a GitHub release.
