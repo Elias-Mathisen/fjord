@@ -1,0 +1,6 @@
+# Unix line endings everywhere: build-mac.sh must run on the Mac, and Firefox reads the rest either way
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.woff2 binary
+*.ico binary

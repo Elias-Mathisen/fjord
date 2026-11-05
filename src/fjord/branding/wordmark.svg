@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 172 80" fill="context-fill light-dark(#1d1d1f, #ededed)">
+  <!-- light-dark() in the fill fallback only resolves with a declared color-scheme. -->
+  <style>:root { color-scheme: light dark }</style>
+  <text x="0" y="62" font-family="Segoe UI, -apple-system, system-ui, sans-serif" font-size="68" font-weight="600" letter-spacing="-1">Fjord</text>
+</svg>

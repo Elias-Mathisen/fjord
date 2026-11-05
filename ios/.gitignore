@@ -1,0 +1,5 @@
+# Made by build.sh (tools/make-project.py and tools/prepare.py)
+build/
+Fjord.xcodeproj/
+Fjord/Resources/
+Fjord/Assets.xcassets/

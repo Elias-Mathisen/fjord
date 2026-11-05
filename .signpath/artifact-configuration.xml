@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What SignPath signs: FjordSetup.exe inside the zip GitHub makes of the build's upload, and only when its
+     Properties name the product Fjord (set by tools\build-installer.ps1). Paste this into the SignPath project. -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file path="FjordSetup.exe" product-name="Fjord">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>

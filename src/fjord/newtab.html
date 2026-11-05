@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>New Tab</title>
+<link rel="icon" href="branding/logo.png">
+<style>
+  /* Geist (Vercel, SIL Open Font License, see fonts/Geist-LICENSE.txt) */
+  @font-face { font-family: "Geist"; src: url("fonts/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; }
+  :root { color-scheme: dark light; --glass: rgb(20 20 22 / 0.42); --glass-line: rgb(255 255 255 / 0.12); }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1e1e20; color: #fff;
+    font-family: "Geist", "Segoe UI", -apple-system, system-ui, sans-serif; }
+  @media (prefers-color-scheme: light) { html, body { background: #f0f0f0; } }
+
+  #photo { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.5s ease-out; }
+  #photo.ready { opacity: 1; }
+  /* Keeps white text readable on bright photos */
+  #scrim { position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 60% 45% at 50% 42%, rgb(0 0 0 / 0.28), transparent 70%),
+                linear-gradient(to bottom, rgb(0 0 0 / 0.3), transparent 24%, transparent 70%, rgb(0 0 0 / 0.45)); }
+  /* Photos off: a plain background in the theme's greys */
+  body.plain #photo, body.plain #scrim, body.plain #credit { display: none; }
+  body.plain { background: radial-gradient(ellipse at 50% 30%, #2f2f33, #1a1a1c 70%); }
+  @media (prefers-color-scheme: light) {
+    body.plain { background: radial-gradient(ellipse at 50% 30%, #ffffff, #e9e9eb 70%); color: #1d1d1f;
+      --glass: rgb(255 255 255 / 0.7); --glass-line: rgb(0 0 0 / 0.08); }
+    body.plain :is(#time small, #date, .stat span, .week, .week-bars span) { color: #6e6e73 !important; }
+    body.plain .week b { color: #1d1d1f; }
+    body.plain .week-bars i { background: #1d1d1f !important; }
+    body.plain :is(main, .stats, .week) { text-shadow: none !important; }
+  }
+
+  main { position: relative; height: 100%; display: grid; place-content: center; text-align: center;
+    padding-bottom: 12vh; user-select: none; text-shadow: 0 2px 24px rgb(0 0 0 / 0.45); }
+  #time { display: flex; justify-content: center; align-items: baseline;
+    font-size: clamp(64px, 11vw, 136px); font-weight: 200; line-height: 1.15; letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums; }
+  #time small { font-size: 0.24em; font-weight: 400; letter-spacing: 0.02em; margin-inline-start: 0.25em; color: rgb(255 255 255 / 0.8); }
+  #date { margin-top: 6px; font-size: clamp(15px, 1.6vw, 19px); color: rgb(255 255 255 / 0.85); letter-spacing: 0.02em; }
+
+  /* Privacy stats, top left */
+  .stats { position: fixed; top: 22px; left: 26px; display: flex; gap: 34px; text-shadow: 0 1px 12px rgb(0 0 0 / 0.5); }
+  .stat { display: grid; gap: 1px; }
+  .stat b { font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .stat span { font-size: 12.5px; color: rgb(255 255 255 / 0.8); }
+
+  /* This week, bottom right, no box: the total, then a bar per day with its name under it */
+  .week { position: fixed; right: 28px; bottom: 20px; width: 250px; display: grid; gap: 10px;
+    font-size: 13px; color: rgb(255 255 255 / 0.8); text-shadow: 0 1px 12px rgb(0 0 0 / 0.55); }
+  .week-total b { font-size: 24px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; margin-inline-end: 6px; }
+  .week-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 64px; }
+  .week-bars .bar { display: grid; justify-items: center; align-content: end; gap: 6px; }
+  .week-bars i { width: 100%; min-height: 4px; border-radius: 5px; background: #fff; opacity: 0.4; box-shadow: 0 1px 8px rgb(0 0 0 / 0.25); }
+  .week-bars .today i { opacity: 1; }
+  .week-bars span { font-size: 11px; color: rgb(255 255 255 / 0.75); }
+
+  #customize { position: fixed; top: 18px; right: 22px; display: flex; align-items: center; gap: 7px; padding: 7px 12px;
+    border: none; border-radius: 999px; background: var(--glass); backdrop-filter: blur(16px); box-shadow: inset 0 0 0 1px var(--glass-line);
+    color: inherit; font: inherit; font-size: 13px; cursor: pointer; opacity: 0; transition: opacity 0.2s; }
+  body:hover #customize, #customize:focus-visible { opacity: 1; }
+  #customize:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  #customize svg { width: 15px; height: 15px; }
+
+  #credit { position: fixed; left: 26px; bottom: 18px; font-size: 12px; color: rgb(255 255 255 / 0.75);
+    text-decoration: none; text-shadow: 0 1px 8px rgb(0 0 0 / 0.6); }
+  #credit:hover { color: #fff; text-decoration: underline; }
+  #credit:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 3px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 760px) { .week { display: none; } .stats { gap: 22px; } }
+  @media (prefers-reduced-motion: reduce) { #photo { transition: none; } }
+</style>
+</head>
+<body>
+<img id="photo" alt="">
+<div id="scrim"></div>
+<div class="stats" id="stats" aria-live="polite" hidden>
+  <div class="stat" data-show="blocked"><b id="blocked"></b><span id="blocked-label">ads and trackers blocked</span></div>
+  <div class="stat" data-show="time"><b id="time-saved"></b><span>time saved</span></div>
+  <div class="stat" data-show="data"><b id="data-saved"></b><span>data saved</span></div>
+</div>
+<button id="customize" type="button" title="Choose what this page shows">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+  Customize
+</button>
+<main data-show="clock">
+  <div id="time"></div>
+  <div id="date"></div>
+</main>
+<section class="week" id="week" data-show="week" aria-label="This week" hidden>
+  <div class="week-total"><b id="week-blocked"></b>blocked this week</div>
+  <div class="week-bars" id="week-bars"></div>
+</section>
+<a id="credit" target="_blank" rel="noopener noreferrer"></a>
+<script src="photos.js"></script>
+<script>
+// Photo: a random one from the set that matches the current theme
+const dark = matchMedia("(prefers-color-scheme: dark)");
+const photo = document.getElementById("photo"), credit = document.getElementById("credit");
+function pickPhoto(tries = 0) {
+  const set = PHOTOS[dark.matches ? "dark" : "light"];
+  const p = set[Math.floor(Math.random() * set.length)];
+  photo.classList.remove("ready");
+  photo.onload = () => photo.classList.add("ready");
+  // The installer downloads the photos; if one is missing, try another instead of showing a broken image
+  photo.onerror = () => { if (tries < 5) pickPhoto(tries + 1); else credit.textContent = ""; };
+  photo.src = p.file;
+  credit.textContent = `Photo by ${p.by} on Unsplash`;
+  credit.href = p.page;
+}
+dark.addEventListener("change", () => pickPhoto());
+pickPhoto();
+
+// Estimates, like other browsers make: about 50 ms and 40 KB for each ad or tracker that never loaded
+function duration(ms) {
+  const min = Math.round(ms / 60000);
+  if (min < 1) return `${Math.round(ms / 1000)} s`;
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  return h < 48 ? `${h} h ${min % 60} min` : `${Math.round(h / 24)} days`;
+}
+function size(kb) {
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  if (kb < 1024 * 1024) return `${Math.round(kb / 1024)} MB`;
+  return `${(kb / 1024 / 1024).toFixed(1)} GB`;
+}
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+// Fjord writes fjord-stats.js into the profile, which calls fjordStats(): the counts, this week, and
+// which parts of this page are switched on (Fjord settings > New tab)
+function fjordStats({ blocked, since, week, layout }) {
+  for (const e of document.querySelectorAll("[data-show]")) e.hidden = layout ? !layout[e.dataset.show] : false;
+  document.body.classList.toggle("plain", layout?.photos === false);
+  document.getElementById("blocked").textContent = blocked.toLocaleString();
+  document.getElementById("blocked-label").textContent = `ads and trackers blocked${since ? " since " + new Date(since).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}`;
+  document.getElementById("time-saved").textContent = duration(blocked * 50);
+  document.getElementById("data-saved").textContent = size(blocked * 40);
+  const stats = document.getElementById("stats");
+  stats.hidden = layout ? !(layout.blocked || layout.time || layout.data) : false;
+
+  if (week) {
+    document.getElementById("week-blocked").textContent = week.blocked.toLocaleString();
+    const max = Math.max(1, ...week.days.map(d => d.blocked));
+    document.getElementById("week-bars").replaceChildren(...week.days.map((d, i) => {
+      const bar = el("div", i === week.days.length - 1 ? "bar today" : "bar");
+      bar.title = `${d.day}: ${d.blocked.toLocaleString()} blocked`;
+      const fill = el("i");
+      fill.style.height = `${Math.max(4, (d.blocked / max) * 44)}px`;
+      bar.append(fill, el("span", null, d.day));
+      return bar;
+    }));
+  }
+}
+const statsSrc = new URLSearchParams(location.search).get("stats");
+if (statsSrc && /^file:\/\/\/.+\/fjord-stats\.js$/.test(statsSrc)) {
+  const load = () => {
+    const s = document.createElement("script");
+    s.src = `${statsSrc}?t=${Date.now()}`;
+    s.onload = s.onerror = () => s.remove();
+    document.body.append(s);
+  };
+  load();
+  setTimeout(load, 1500); // Fjord rewrites the file as this tab opens
+  // shortcut: re-read every 5 s while visible, so changes in settings show without reopening the tab
+  setInterval(() => { if (!document.hidden) load(); }, 5000);
+}
+
+// Customize: Fjord sees #customize on this page's address and opens its New tab settings
+document.getElementById("customize").addEventListener("click", () => {
+  location.hash = "customize";
+  setTimeout(() => history.replaceState(null, "", location.pathname + location.search), 300);
+});
+
+// Clock
+const timeFmt = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
+const dateFmt = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
+function tick() {
+  const now = new Date();
+  document.getElementById("time").replaceChildren(...timeFmt.formatToParts(now).map(p => {
+    if (p.type !== "dayPeriod") return p.value.trim() ? p.value : "";
+    const s = document.createElement("small");
+    s.textContent = p.value;
+    return s;
+  }));
+  document.getElementById("date").textContent = dateFmt.format(now);
+}
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

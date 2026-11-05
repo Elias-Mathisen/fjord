@@ -1,0 +1,18 @@
+<!-- Banner scene for setup and settings (light theme): looking down a fjord at dawn -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 240" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bcd5e6"/><stop offset=".7" stop-color="#eef4f8"/></linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fc2d8"/><stop offset="1" stop-color="#5b8fb4"/></linearGradient>
+    <linearGradient id="mist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="720" height="240" fill="url(#sky)"/>
+  <circle cx="452" cy="112" r="30" fill="#fff" opacity=".85"/>
+  <path d="M0 150 90 112 170 138 262 94 362 134 452 104 560 140 640 110 720 132V200H0z" fill="#b2cde0"/>
+  <rect y="128" width="720" height="40" fill="url(#mist)"/>
+  <path d="M0 86 84 66 170 118 260 176 300 196H0z" fill="#5b8fb4"/>
+  <path d="M720 76 636 60 552 110 462 174 420 196H720z" fill="#4a7fa6"/>
+  <rect y="174" width="720" height="66" fill="url(#water)"/>
+  <path d="M300 190h120M318 204h84M336 218h48" stroke="#fff" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"/>
+  <path d="M0 118 54 100 126 150 196 240H0z" fill="#12324f"/>
+  <path d="M720 108 668 92 596 150 530 240H720z" fill="#183d60"/>
+</svg>

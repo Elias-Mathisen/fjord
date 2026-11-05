@@ -1,0 +1,48 @@
+# Builds FjordSetup.exe on GitHub's own Windows machines, so every release can be traced to the code in this
+# repository, then has SignPath sign it once the SignPath secret is set. tools\release.ps1 starts this and publishes
+# the result; nothing here publishes anything.
+name: Build installer
+on: workflow_dispatch
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File tools\build-installer.ps1
+
+      - name: Upload unsigned installer
+        id: unsigned
+        uses: actions/upload-artifact@v7
+        with:
+          name: FjordSetup-unsigned
+          path: dist/FjordSetup.exe
+
+      # Set up by SignPath Foundation; until then this is skipped and releases use the unsigned installer.
+      # The request waits on SignPath until you approve it there.
+      - name: Sign with SignPath
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'fjord' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG || 'release-signing' }}
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: signed
+
+      - name: Upload signed installer
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: FjordSetup-signed
+          path: signed/FjordSetup.exe

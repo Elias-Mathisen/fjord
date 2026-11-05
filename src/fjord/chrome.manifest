@@ -1,0 +1,18 @@
+# Fjord's name and logo in place of Firefox's (registered by Fjord.cfg)
+override chrome://branding/locale/brand.properties branding/brand.properties
+override chrome://branding/content/aboutDialog.css branding/aboutDialog.css
+override chrome://branding/content/about-wordmark.svg branding/wordmark-light.svg
+override chrome://branding/content/firefox-wordmark.svg branding/wordmark.svg
+override chrome://branding/content/about-logo.svg branding/logo.png
+override chrome://branding/content/about-logo.png branding/logo.png
+override chrome://branding/content/about-logo@2x.png branding/logo.png
+override chrome://branding/content/about-logo-private.png branding/logo.png
+override chrome://branding/content/about-logo-private@2x.png branding/logo.png
+override chrome://branding/content/about.png branding/logo.png
+override chrome://branding/content/icon16.png branding/logo.png
+override chrome://branding/content/icon32.png branding/logo.png
+override chrome://branding/content/icon48.png branding/logo.png
+override chrome://branding/content/icon64.png branding/logo.png
+override chrome://branding/content/icon128.png branding/logo.png
+# chrome://fjord/content/ = this folder, for pages that need Firefox's privileges (the sidebar apps' webpanel.html)
+content fjord ./

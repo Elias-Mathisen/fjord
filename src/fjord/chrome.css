@@ -1,0 +1,687 @@
+/* Fjord look for the browser window, loaded into each window by browser.js.
+   shortcut: targets Firefox 159's internal element names, which Mozilla changes now and then; re-check after major Firefox updates. */
+
+  /* Geist (Vercel, SIL Open Font License, see fonts/Geist-LICENSE.txt) for Fjord's UI; web pages keep their own fonts */
+  @font-face {
+    font-family: "Geist";
+    src: url("resource://fjord/fonts/Geist-Variable.woff2") format("woff2");
+    font-weight: 100 900;
+  }
+  :root, #navigator-toolbox, .tab-label, #urlbar-input, #urlbar .urlbarView, panel, menupopup, .ns-overlay, .ns-shields, .ns-guard {
+    font-family: "Geist", "Segoe UI", system-ui, sans-serif !important;
+  }
+  :root {
+    /* Dark: neutral greys with white as the accent */
+    --n-bg: #1e1e20;
+    --n-surface: #2b2b2e;
+    --n-raised: #38383b;
+    --n-line: #3d3d40;
+    --n-text: #ededed;
+    --n-muted: #a1a1a6;
+    --n-accent: #ededed;
+    --n-accent-soft: rgb(255 255 255 / 0.1);
+    --n-on-accent: #1e1e20;
+    --n-good: #ededed;
+    --n-hover: rgb(255 255 255 / 0.07);
+    --n-badge: #48484c;
+
+    --toolbarbutton-border-radius: 8px !important;
+    --toolbar-color: var(--n-text) !important;
+    --toolbarbutton-icon-fill: var(--n-text) !important;
+    --toolbox-textcolor: var(--n-text) !important;
+    --toolbar-field-placeholder-color: var(--n-muted) !important;
+    --toolbarbutton-hover-background: var(--n-hover) !important;
+    --toolbarbutton-active-background: rgb(255 255 255 / 0.1) !important;
+    --toolbar-field-background-color: var(--n-surface) !important;
+    --toolbar-field-color: var(--n-text) !important;
+    --toolbar-field-focus-background-color: var(--n-raised) !important;
+    --toolbar-field-focus-color: var(--n-text) !important;
+    --toolbar-field-focus-border-color: var(--n-accent) !important;
+    --focus-outline-color: var(--n-accent) !important;
+    --arrowpanel-background: var(--n-surface) !important;
+    --arrowpanel-color: var(--n-text) !important;
+    --arrowpanel-border-color: var(--n-line) !important;
+    --panel-background: var(--n-surface) !important;
+    --panel-color: var(--n-text) !important;
+    --panel-border-color: var(--n-line) !important;
+    --sidebar-background-color: var(--n-bg) !important;
+    --sidebar-text-color: var(--n-text) !important;
+    --tab-selected-bgcolor: var(--n-raised) !important;
+    --tab-selected-textcolor: var(--n-text) !important;
+    --chrome-content-separator-color: transparent !important;
+    /* Firefox's own accent (the selected sidebar app, checkboxes, focus) in Fjord's greys instead of purple */
+    --color-accent-primary: var(--n-accent) !important;
+    --color-accent-primary-hover: var(--n-muted) !important;
+    --color-accent-primary-active: var(--n-muted) !important;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      /* Light: white and light grey with near-black as the accent */
+      --n-bg: #f0f0f0;
+      --n-surface: #ffffff;
+      --n-raised: #ffffff;
+      --n-line: #d8d8d8;
+      --n-text: #1d1d1f;
+      --n-muted: #6e6e73;
+      --n-accent: #1d1d1f;
+      --n-accent-soft: rgb(0 0 0 / 0.06);
+      --n-on-accent: #ffffff;
+      --n-good: #1d1d1f;
+      --n-hover: rgb(0 0 0 / 0.05);
+      --n-badge: #3a3a3d;
+      --toolbarbutton-active-background: rgb(0 0 0 / 0.09) !important;
+    }
+  }
+
+  /* One solid color instead of Firefox's gradient */
+  :root, body, #navigator-toolbox, #browser {
+    background: var(--n-bg) !important;
+    color: var(--n-text) !important;
+  }
+  #TabsToolbar, #nav-bar, #PersonalToolbar {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  #navigator-toolbox { border-bottom: none !important; }
+
+  /* Fewer buttons; Fjord's Shields replaces Firefox's own shield */
+  #alltabs-button, #fxa-toolbar-menu-button, #tracking-protection-icon-container { display: none !important; }
+
+  /* Tabs */
+  .tab-background {
+    border-radius: 8px !important;
+    outline: none !important;
+  }
+  .tab-background:is([selected], [multiselected]) {
+    background: var(--n-raised) !important;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.18) !important;
+  }
+  .tabbrowser-tab:hover .tab-background:not([selected], [multiselected]) {
+    background: var(--n-hover) !important;
+  }
+
+  /* Address bar */
+  #urlbar .urlbar-background {
+    background: var(--n-surface) !important;
+    border: 1px solid var(--n-line) !important;
+    box-shadow: none !important;
+    border-radius: 999px !important;
+  }
+  #urlbar:is([focused], [open]) .urlbar-background {
+    background: var(--n-raised) !important;
+    border-color: var(--n-accent) !important;
+  }
+  #urlbar[open] .urlbar-background { border-radius: 16px !important; }
+
+  /* Web page floats as a rounded card */
+  #tabbrowser-tabbox {
+    margin: 0 8px 8px !important;
+    border-radius: 12px !important;
+    overflow: clip !important;
+    box-shadow: 0 0 0 1px var(--n-line) !important;
+  }
+  #tabbrowser-tabpanels { background: var(--n-bg) !important; }
+  :root:is([inFullscreen], [inDOMFullscreen]) #tabbrowser-tabbox {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* ---------- Setup and settings ---------- */
+  .ns-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    display: grid;
+    place-items: center;
+    background: rgb(0 0 0 / 0.55);
+    backdrop-filter: blur(18px) saturate(1.2);
+    color: var(--n-text);
+    font-size: 14px;
+    animation: ns-fade 0.18s ease-out;
+  }
+  .ns-card {
+    position: relative;
+    box-sizing: border-box;
+    border-radius: 24px;
+    background: var(--n-surface);
+    box-shadow: 0 0 0 1px var(--n-line), 0 32px 96px rgb(0 0 0 / 0.4);
+    animation: ns-rise 0.22s ease-out;
+  }
+  @keyframes ns-fade { from { opacity: 0; } }
+  @keyframes ns-rise { from { opacity: 0; transform: translateY(8px) scale(0.99); } }
+  @keyframes ns-in { from { opacity: 0; transform: translateY(6px); } }
+  @media (prefers-reduced-motion: reduce) { .ns-overlay, .ns-card, .ns-body, .ns-pane > * { animation: none !important; } }
+
+  .ns-overlay :is(h1, h2, h3, p, ul) { margin: 0; }
+  .ns-overlay h1 { margin: 6px 0 8px; font-size: 30px; font-weight: 650; letter-spacing: -0.025em; }
+  .ns-overlay h2 { font-size: 22px; font-weight: 650; letter-spacing: -0.015em; }
+  .ns-overlay h3 { margin: 28px 0 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--n-muted); }
+  .ns-overlay p { margin: 0 0 16px; color: var(--n-muted); line-height: 1.55; }
+  .ns-overlay h3 + p { margin-top: -4px; }
+  .ns-overlay p.ns-quiet, .ns-quiet { margin: 0; color: var(--n-muted); font-size: 13px; line-height: 1.45; }
+  .ns-overlay :is(.ns-note, p.ns-note) { margin-top: 12px; }
+  .ns-overlay button, .ns-overlay input { appearance: none; margin: 0; font: inherit; color: inherit; }
+  .ns-overlay button { cursor: pointer; transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s; }
+  .ns-overlay :is(button, input):focus-visible { outline: 2px solid var(--n-accent); outline-offset: 2px; }
+
+  /* Illustrations: the fjord at dawn in light mode, at night in dark mode */
+  .ns-scene { position: relative; overflow: hidden; }
+  /* Muted to near-grey so the art sits in the white-and-grey look */
+  .ns-scene > :is(.ns-scene-light, .ns-scene-dark) { display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(0.15); }
+  .ns-scene-light { display: none !important; }
+  @media (prefers-color-scheme: light) {
+    .ns-scene-light { display: block !important; }
+    .ns-scene-dark { display: none !important; }
+  }
+  .ns-icon { width: 18px; height: 18px; -moz-context-properties: stroke; stroke: currentColor; }
+  /* Section badges: a white icon on its own colour, like an app icon */
+  .ns-badge {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    color: #fff;
+    background: linear-gradient(160deg, rgb(255 255 255 / 0.16), transparent 60%), var(--n-badge);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  }
+  .ns-badge .ns-icon { width: 17px; height: 17px; }
+  .ns-badge-lg { width: 44px; height: 44px; border-radius: 12px; }
+  .ns-badge-lg .ns-icon { width: 24px; height: 24px; }
+  .ns-logo { padding: 0; object-fit: cover; background: none; }
+
+  /* Buttons */
+  .ns-primary {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 11px;
+    background: var(--n-accent);
+    color: var(--n-on-accent) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.2), inset 0 1px rgb(255 255 255 / 0.15);
+  }
+  .ns-primary:hover { filter: brightness(1.08); }
+  .ns-secondary {
+    padding: 8px 16px;
+    border: 1px solid var(--n-line);
+    border-radius: 10px;
+    background: var(--n-raised);
+    font-weight: 500 !important;
+  }
+  .ns-secondary:hover { background: var(--n-hover); }
+  .ns-secondary:disabled { opacity: 0.5; cursor: default; }
+  .ns-link { padding: 9px 12px; border: none; border-radius: 10px; background: transparent; color: var(--n-muted) !important; }
+  .ns-link:hover { color: var(--n-text) !important; background: var(--n-hover); }
+
+  /* Setup: the installer's look, an ink drawing on the left and the step on the right */
+  .ns-setup {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    width: min(900px, calc(100vw - 32px));
+    height: min(580px, calc(100vh - 48px));
+    overflow: hidden;
+  }
+  .ns-setup-art { position: relative; overflow: hidden; }
+  /* The drawing's paper is pure white: in light mode it multiplies into the card; in dark mode it's inverted to light
+     lines and screened onto the dark card */
+  .ns-setup-art {
+    --art-opacity: 0.8;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .ns-setup-art img {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: invert(1);
+    mix-blend-mode: screen;
+    opacity: var(--art-opacity);
+    mask-image: linear-gradient(to right, #000 82%, transparent);
+    /* Each step reframes the drawing (browser.js sets the transform): a slow glide, not a jump */
+    transform-origin: 40% 55%;
+    transition: transform 1.6s var(--ease-out), opacity 0.9s ease;
+  }
+  .ns-setup-art .ns-art-end { opacity: 0; }
+  .ns-setup-art[done] img { opacity: 0; }
+  .ns-setup-art[done] .ns-art-end { opacity: var(--art-opacity); }
+  @media (prefers-color-scheme: light) {
+    .ns-setup-art { --art-opacity: 1; }
+    .ns-setup-art img { filter: none; mix-blend-mode: multiply; }
+  }
+  .ns-setup-main { position: relative; display: flex; flex-direction: column; min-height: 0; }
+  .ns-setup .ns-dots { position: absolute; top: 26px; right: 30px; z-index: 1; display: flex; gap: 5px; }
+  .ns-setup .ns-dots i {
+    width: 14px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--n-line);
+    transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s;
+  }
+  .ns-setup .ns-dots i[on] { background: var(--n-accent); }
+  .ns-setup .ns-dots i[now] { width: 30px; }
+  .ns-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: auto;
+    padding: 40px 40px 28px 28px;
+  }
+  /* A step's pieces slide in from the side you're heading to, one after another (browser.js sets --dir and --i) */
+  @keyframes ns-step { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 22px)); } }
+  @keyframes ns-settle { from { opacity: 0; transform: translateY(10px) scale(0.98); } }
+  .ns-body > *, .ns-end > * { animation: ns-step 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--i, 0) * 50ms); }
+  .ns-end { animation: none !important; }
+  .ns-body :is(.ns-tiles, .ns-options, .ns-pills, .ns-sources) > button {
+    animation: ns-settle 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(140ms + var(--j, 0) * 45ms);
+  }
+  /* Buttons give a little under the finger */
+  .ns-setup button { transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.12s; }
+  .ns-setup button:active { transform: scale(0.97); }
+  /* The protection summary ripples when you pick another level */
+  .ns-summary li { animation: ns-settle 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .ns-summary li:nth-child(2) { animation-delay: 30ms; }
+  .ns-summary li:nth-child(3) { animation-delay: 60ms; }
+  .ns-summary li:nth-child(4) { animation-delay: 90ms; }
+  .ns-summary li:nth-child(5) { animation-delay: 120ms; }
+  @media (prefers-reduced-motion: reduce) {
+    .ns-setup *, .ns-summary li { animation: none !important; }
+    .ns-setup-art img { transition: opacity 0.3s !important; transform: none !important; }
+    .ns-setup button:active { transform: none; }
+  }
+  .ns-body > h2 { margin: 0 130px 6px 0; font-size: 24px; }
+  .ns-body > .ns-step-actions { margin-top: auto; padding-top: 24px; }
+  .ns-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 650; }
+  .ns-brand img { width: 32px; height: 32px; }
+  /* Welcome and done: the brand at the top, the words and button at the bottom, like the installer */
+  .ns-end { margin-top: auto; }
+  .ns-end .ns-actions { justify-content: flex-start; margin-top: 22px; }
+  /* The tab tiles the same size as the theme tiles above them, so the step fits without scrolling */
+  .ns-setup .ns-tiles-2 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ns-setup h3 { margin-top: 22px; font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--n-text); }
+  @media (max-width: 760px) {
+    .ns-setup { grid-template-columns: 1fr; }
+    .ns-setup-art { display: none; }
+  }
+  .ns-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 30px; }
+  .ns-actions .ns-back, .ns-actions .ns-link:first-child { margin-inline-end: auto; }
+
+  /* Choice groups */
+  :is(.ns-tiles, .ns-options, .ns-pills, .ns-sources) > button {
+    border: 1px solid var(--n-line);
+    border-radius: 14px;
+    background: var(--n-raised);
+    text-align: start;
+  }
+  :is(.ns-tiles, .ns-options, .ns-pills, .ns-sources) > button:hover { border-color: color-mix(in srgb, var(--n-accent) 45%, var(--n-line)); }
+  :is(.ns-tiles, .ns-options, .ns-pills, .ns-sources) > button[aria-pressed="true"] {
+    border-color: var(--n-accent);
+    box-shadow: 0 0 0 3px var(--n-accent-soft);
+    background: var(--n-accent-soft);
+  }
+  .ns-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .ns-tiles-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ns-tiles > button { display: grid; gap: 10px; padding: 10px 10px 12px; }
+  .ns-tiles img { width: 100%; border-radius: 8px; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06); }
+  .ns-tiles b { padding-inline: 2px; font-weight: 500; }
+  .ns-options { display: grid; gap: 8px; }
+  .ns-options > button { display: grid; grid-template-columns: 36px 1fr; align-items: center; gap: 14px; padding: 13px 16px; }
+  .ns-options > button:not(:has(img)) { grid-template-columns: 1fr; }
+  .ns-options img { width: 32px; height: 32px; -moz-context-properties: stroke, fill; stroke: var(--n-muted); fill: var(--n-muted); }
+  .ns-options > button[aria-pressed="true"] img { stroke: var(--n-accent); fill: var(--n-accent); }
+  .ns-options span { display: grid; gap: 2px; }
+  .ns-options span span { color: var(--n-muted); font-size: 13px; line-height: 1.4; }
+  .ns-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ns-pills > button { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; }
+  .ns-pills img { width: 16px; height: 16px; }
+
+  /* Protection levels, with what the picked one does beside them */
+  .ns-protection { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+  .ns-summary { display: grid; gap: 11px; padding: 16px 18px; border-radius: 14px; background: var(--n-bg); list-style: none; }
+  .ns-summary li { display: flex; gap: 10px; align-items: flex-start; color: var(--n-muted); font-size: 13px; line-height: 1.4; }
+  .ns-summary li .ns-icon { width: 16px; height: 16px; margin-top: 1px; stroke: var(--n-muted); opacity: 0.6; }
+  .ns-summary li.ns-yes { color: var(--n-text); }
+  .ns-summary li.ns-yes .ns-icon { stroke: var(--n-good); opacity: 1; }
+  .ns-ready { grid-template-columns: 1fr 1fr; margin-top: 4px; }
+
+  /* Import */
+  .ns-import { display: grid; gap: 14px; }
+  .ns-sources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .ns-sources > button { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+  .ns-sources img { width: 28px; height: 28px; }
+  .ns-sources span { display: grid; gap: 1px; }
+  .ns-sources span span { color: var(--n-muted); font-size: 12px; }
+  .ns-kinds { display: flex; flex-wrap: wrap; gap: 18px; }
+  .ns-kinds label { display: flex; align-items: center; gap: 8px; }
+  .ns-kinds input { appearance: auto !important; width: 16px; height: 16px; accent-color: var(--n-accent); }
+  .ns-row { display: flex; align-items: center; gap: 12px; }
+
+  /* Settings */
+  .ns-settings {
+    display: grid;
+    grid-template-columns: 236px 1fr;
+    width: min(980px, calc(100vw - 32px));
+    height: min(680px, calc(100vh - 48px));
+    overflow: hidden;
+  }
+  .ns-side { display: flex; flex-direction: column; gap: 14px; padding: 20px 14px; background: var(--n-bg); border-inline-end: 1px solid var(--n-line); }
+  .ns-find {
+    padding: 9px 12px 9px 34px;
+    border: 1px solid var(--n-line);
+    border-radius: 10px;
+    background: var(--n-surface) url("chrome://global/skin/icons/search-textbox.svg") no-repeat 11px center / 15px;
+    -moz-context-properties: fill;
+    fill: var(--n-muted);
+  }
+  .ns-find:focus { border-color: var(--n-accent); outline: none; box-shadow: 0 0 0 3px var(--n-accent-soft); }
+  .ns-nav { display: flex; flex-direction: column; gap: 2px; }
+  .ns-nav > button {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 7px 10px 7px 7px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    text-align: start;
+    color: var(--n-text);
+  }
+  .ns-nav > button:hover { background: var(--n-hover); }
+  .ns-nav > button[aria-current] { background: var(--n-accent-soft); font-weight: 600; }
+  .ns-nav > button[hidden] { display: none; }
+  .ns-pane { overflow: auto; padding: 30px 40px 40px; }
+  .ns-pane > * { animation: ns-in 0.2s ease-out; }
+  .ns-head { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; padding-inline-end: 32px; }
+  .ns-head p { margin: 4px 0 0; }
+  .ns-pane > .ns-secondary { margin-top: 18px; }
+  .ns-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+  }
+  .ns-close:hover { background: var(--n-hover); }
+  .ns-close img { width: 16px; height: 16px; -moz-context-properties: fill; fill: currentColor; }
+
+  /* Cards of rows, like grouped lists */
+  .ns-group { border: 1px solid var(--n-line); border-radius: 14px; background: var(--n-raised); overflow: hidden; }
+  .ns-group > * { padding-inline: 18px; }
+  .ns-group > :not(:last-child) { border-bottom: 1px solid var(--n-line); }
+  .ns-list-row { display: flex; align-items: center; gap: 10px; min-height: 48px; box-sizing: border-box; }
+  .ns-group > p.ns-list-row { padding-block: 14px; }
+  .ns-list-row > span { flex: 1; }
+  .ns-list-row > span.ns-quiet { flex: 0 0 auto; }
+
+  /* A short notice over a page (permission watch, design tools) */
+  .ns-toast {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 11;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: min(440px, calc(100% - 24px));
+    padding: 8px 8px 8px 14px;
+    border-radius: 12px;
+    background: var(--n-surface);
+    color: var(--n-text);
+    font-size: 13px;
+    box-shadow: 0 0 0 1px var(--n-line), 0 10px 30px rgb(0 0 0 / 0.3);
+    animation: ns-in 0.2s ease-out;
+  }
+  .ns-toast > span { padding-block: 4px; }
+  .ns-toast button { appearance: none; padding: 5px 10px; border: none; border-radius: 8px; background: var(--n-hover); color: var(--n-text); font: inherit; font-weight: 600; cursor: pointer; }
+  @media (prefers-reduced-motion: reduce) { .ns-toast { animation: none; } }
+
+  /* App lock: everything but the lock screen is hidden, so taskbar previews show nothing either */
+  :root[fjord-locked] :is(#navigator-toolbox, #browser, #customization-container, .ns-overlay:not(.ns-lock)) { visibility: hidden !important; }
+  .ns-lock { background: var(--n-bg); backdrop-filter: none; }
+  .ns-lock-card { display: grid; justify-items: center; gap: 4px; text-align: center; }
+  .ns-lock-card img { width: 72px; height: 72px; margin-bottom: 14px; border-radius: 17px; box-shadow: 0 12px 32px rgb(0 0 0 / 0.3); }
+  .ns-lock-card h1 { margin: 0 !important; }
+  .ns-lock-card > p { margin: 0 0 22px !important; }
+  .ns-lock-card .ns-primary { padding: 11px 26px; }
+  .ns-lock-card .ns-quiet { margin-top: 12px !important; }
+
+  /* Memory saver: unloaded tabs are dimmed */
+  .tabbrowser-tab[pending] :is(.tab-icon-image, .tab-label) { opacity: 0.55; }
+
+  /* Design tools */
+  #fjord-design-button { list-style-image: url("resource://fjord/illustrations/icons/design.svg"); -moz-context-properties: stroke; stroke: currentColor; }
+  #fjord-design { --arrowpanel-padding: 0; }
+  .ns-design { gap: 4px; width: 320px; }
+  .ns-design-title { padding: 2px 6px 6px; font-size: 15px; }
+  .ns-design-tool {
+    appearance: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  .ns-design-tool:hover { background: var(--n-hover); }
+  .ns-design-tool .ns-icon { width: 20px; height: 20px; margin-top: 1px; }
+  .ns-design-tool > span { display: grid; gap: 2px; }
+  .ns-design-tool > span span { color: var(--n-muted); font-size: 12.5px; line-height: 1.4; }
+
+  .ns-picker { position: absolute; inset: 0; z-index: 12; cursor: crosshair; outline: none; }
+  .ns-picker > canvas { display: block; width: 100%; height: 100%; }
+  .ns-picker-lens {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px 6px 6px;
+    border-radius: 10px;
+    background: var(--n-surface);
+    color: var(--n-text);
+    font: 600 13px "Geist", system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 0 0 1px var(--n-line), 0 8px 24px rgb(0 0 0 / 0.3);
+    pointer-events: none;
+  }
+  .ns-picker-lens i { width: 24px; height: 24px; border-radius: 6px; box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.4); }
+
+  /* Fjord's connections */
+  .ns-conn-row { padding-block: 12px; }
+  .ns-conn-row > span:first-child { display: grid; gap: 2px; }
+  .ns-conn-row > span:first-child span { color: var(--n-muted); font-size: 12.5px; overflow-wrap: anywhere; }
+  .ns-conn-count { flex: 0 0 auto !important; display: grid; justify-items: end; gap: 1px; font-variant-numeric: tabular-nums; }
+  .ns-conn-count span { color: var(--n-muted); font-size: 12px; }
+
+  /* Sidebar apps */
+  .ns-app-name { display: flex !important; align-items: center; gap: 12px; flex: 1; }
+  .ns-app-name > img { width: 22px; height: 22px; border-radius: 5px; }
+  .ns-app-name > span { display: grid; gap: 1px; }
+  .ns-switch-row .ns-app-name > span { color: var(--n-text); font-size: 14px; }
+  .ns-app-name > span span { color: var(--n-muted) !important; font-size: 12.5px !important; }
+  .ns-add-site { display: grid; gap: 8px; margin-top: 12px; }
+  .ns-add-site input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 12px;
+    border: 1px solid var(--n-line);
+    border-radius: 10px;
+    background: var(--n-raised);
+  }
+  .ns-add-site input[type="text"]:focus { border-color: var(--n-accent); outline: none; box-shadow: 0 0 0 3px var(--n-accent-soft); }
+  .ns-add-site input:first-child { flex: 0 0 160px; }
+  .ns-proxy-form select { padding: 8px 10px; border: 1px solid var(--n-line); border-radius: 10px; background: var(--n-raised); color: var(--n-text); font: inherit; }
+  .ns-proxy-form input:first-of-type { flex: 1 1 auto; }
+  .ns-proxy-form input[inputmode] { flex: 0 0 90px; }
+  .ns-add-site :is(input, select) { box-sizing: border-box; min-width: 0; }
+  .ns-ip-check { margin-top: 16px; }
+
+  /* Overview */
+  .ns-banner { position: relative; height: 180px; margin: 18px 0 16px; border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 1px var(--n-line); }
+  .ns-banner-art { position: absolute; inset: 0; }
+  .ns-banner-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(0 0 0 / 0.55), transparent 70%); }
+  .ns-banner-text { position: absolute; left: 26px; bottom: 22px; display: grid; gap: 2px; color: #fff; text-shadow: 0 1px 12px rgb(0 0 0 / 0.35); }
+  .ns-banner-text b { font-size: 40px; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  .ns-banner-text span { font-size: 14px; opacity: 0.9; }
+  .ns-callout {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 14px 16px 14px 18px;
+    border-radius: 14px;
+    background: var(--n-accent-soft);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-accent) 35%, transparent);
+  }
+  .ns-callout > span { flex: 1; display: grid; gap: 2px; }
+  .ns-callout > span span { color: var(--n-muted); font-size: 13px; }
+  .ns-home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ns-home-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--n-line);
+    border-radius: 14px;
+    background: var(--n-raised);
+    text-align: start;
+  }
+  .ns-home-card:hover { border-color: color-mix(in srgb, var(--n-accent) 45%, var(--n-line)); }
+  .ns-home-card .ns-badge { width: 36px; height: 36px; border-radius: 10px; }
+  .ns-home-card > span:last-child { display: grid; gap: 2px; }
+  .ns-home-card > span:last-child span { color: var(--n-muted); font-size: 13px; }
+
+  .ns-about { display: flex; align-items: center; gap: 16px; margin: 18px 0; }
+  .ns-about img { width: 56px; height: 56px; border-radius: 13px; }
+  .ns-about span { display: grid; gap: 2px; }
+  .ns-about span span { color: var(--n-muted); font-size: 13px; }
+
+  /* Switches (settings and Shields) */
+  :is(.ns-switch-row, .ns-switch) { display: flex; justify-content: space-between; align-items: center; gap: 16px; cursor: pointer; }
+  .ns-switch-row { padding-block: 14px; min-height: 48px; box-sizing: border-box; }
+  .ns-switch-row > span { display: grid; gap: 3px; }
+  .ns-switch-row > span span { color: var(--n-muted); font-size: 13px; line-height: 1.45; }
+  input[role="switch"] {
+    appearance: none;
+    flex-shrink: 0;
+    width: 38px;
+    height: 22px;
+    margin: 0;
+    border-radius: 11px;
+    background: radial-gradient(circle at 11px 11px, #fff 8px, transparent 8.5px), var(--n-line);
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+  input[role="switch"]:checked {
+    background: radial-gradient(circle at 27px 11px, #fff 8px, transparent 8.5px), var(--n-accent);
+  }
+  input[role="switch"]:disabled { opacity: 0.45; cursor: default; }
+  input[role="switch"]:focus-visible { outline: 2px solid var(--n-accent); outline-offset: 2px; }
+
+  /* ---------- Shields ---------- */
+  #fjord-shields-button {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 24px;
+    margin: auto 2px;
+    padding: 0 6px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--n-text);
+    cursor: pointer;
+  }
+  #fjord-shields-button:hover { background: var(--n-hover); }
+  #fjord-shields-button img { width: 16px; height: 16px; -moz-context-properties: fill; fill: currentColor; }
+  #fjord-shields-button .count { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--n-muted); }
+  #fjord-shields { --arrowpanel-padding: 0; }
+  .ns-shields { display: grid; gap: 12px; width: 300px; padding: 16px; color: var(--n-text); font-size: 13px; }
+  .ns-shields .ns-head { display: grid; gap: 12px; margin: 0; padding: 0 0 12px; border-bottom: 1px solid var(--n-line); }
+  .ns-shields .ns-head > b { font-size: 15px; overflow-wrap: anywhere; }
+  .ns-shields .ns-count { margin: 0; }
+  .ns-shields .ns-count b { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ns-shields .ns-switch > span { line-height: 1.4; }
+  .ns-shields .ns-link-row {
+    appearance: none;
+    padding: 9px 10px;
+    margin: 0 -6px -6px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  .ns-shields .ns-link-row:hover { background: var(--n-hover); }
+  .ns-shields .ns-head .ns-count { font-size: 13px; color: var(--n-muted); }
+  .ns-shields .ns-head .ns-count b { color: var(--n-text); }
+
+  /* The protection dial: one segmented control, the picked level's meaning under it */
+  .ns-dial-wrap { display: grid; gap: 8px; }
+  .ns-dial { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: 10px; background: var(--n-bg); box-shadow: inset 0 0 0 1px var(--n-line); }
+  .ns-dial > button {
+    appearance: none;
+    padding: 6px 4px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--n-muted);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .ns-dial > button:hover { color: var(--n-text); }
+  .ns-dial > button[aria-checked="true"] { background: var(--n-raised); color: var(--n-text); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 0.2), inset 0 0 0 1px var(--n-line); }
+  .ns-dial > button[data-level="off"][aria-checked="true"] { color: var(--n-muted); }
+  .ns-dial > button:focus-visible { outline: 2px solid var(--n-accent); outline-offset: 1px; }
+  .ns-dial-desc { min-height: 2.9em; }
+
+  /* Privacy label: companies the page contacted */
+  .ns-label { display: grid; gap: 7px; padding: 12px 0 2px; border-top: 1px solid var(--n-line); }
+  .ns-label h4 { margin: 0 0 2px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--n-muted); }
+  .ns-label-row { display: grid; grid-template-columns: 1fr 70px 28px; align-items: center; gap: 10px; }
+  .ns-label-row i { height: 5px; border-radius: 3px; background: linear-gradient(90deg, var(--n-text) var(--w), var(--n-line) var(--w)); opacity: 0.8; }
+  .ns-label-row b { text-align: end; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* Lookalike-site warning, over the tab it stopped */
+  .ns-guard {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: var(--n-bg);
+    color: var(--n-text);
+    font-size: 14px;
+  }
+  .ns-guard-card { width: min(560px, 100%); padding: 32px 34px 26px; }
+  .ns-guard-card h2 { margin: 14px 0 8px; font-size: 22px; font-weight: 650; letter-spacing: -0.015em; }
+  .ns-guard-card p { margin: 0; color: var(--n-muted); line-height: 1.55; }
+  .ns-guard-card p b { color: var(--n-text); overflow-wrap: anywhere; }
+  .ns-guard-icon { width: 36px; height: 36px; -moz-context-properties: fill; fill: #e8a33a; }
+  .ns-guard :is(button) { appearance: none; margin: 0; font: inherit; color: inherit; cursor: pointer; }
+  .ns-guard button:focus-visible { outline: 2px solid var(--n-accent); outline-offset: 2px; }
+  .ns-guard .ns-primary { color: var(--n-on-accent) !important; }
+  /* Labels stay on one line; when the row is full, "Open … anyway" moves onto its own line instead */
+  .ns-guard .ns-actions { flex-wrap: wrap; }
+  .ns-guard .ns-actions button { white-space: nowrap; }

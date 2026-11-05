@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 124">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d1015"/>
+      <stop offset="1" stop-color="#2a2c33"/>
+    </linearGradient>
+    <clipPath id="page"><rect x="8" y="44" width="184" height="72" rx="7"/></clipPath>
+  </defs>
+  <rect width="200" height="124" rx="12" fill="#1e1e20"/>
+  <circle cx="14" cy="13" r="3" fill="#4a4a4e"/><circle cx="24" cy="13" r="3" fill="#4a4a4e"/><circle cx="34" cy="13" r="3" fill="#4a4a4e"/>
+  <rect x="48" y="6" width="54" height="14" rx="5" fill="#38383b"/>
+  <rect x="108" y="10" width="34" height="6" rx="3" fill="#2b2b2e"/>
+  <rect x="8" y="25" width="184" height="13" rx="6.5" fill="#2b2b2e"/>
+  <g clip-path="url(#page)">
+    <rect x="8" y="44" width="184" height="72" fill="url(#sky)"/>
+    <circle cx="62" cy="56" r=".8" fill="#fff"/><circle cx="96" cy="50" r=".6" fill="#fff"/><circle cx="120" cy="62" r=".7" fill="#fff"/><circle cx="178" cy="52" r=".6" fill="#fff"/>
+    <circle cx="156" cy="64" r="9" fill="#ededed"/><circle cx="160.5" cy="61" r="8" fill="#22242a"/>
+    <path d="M8 104l50-17 20 9 30-21 36 24 26-12 22 10v19H8z" fill="#111215"/>
+  </g>
+</svg>

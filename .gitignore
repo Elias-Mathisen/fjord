@@ -1,0 +1,10 @@
+# Built browsers and installers (made by build.ps1, build-mac.sh and tools\build-installer.ps1)
+dist/
+dist-mac/
+
+# New-tab photos: downloaded by tools\get-photos.ps1 (and by the installer on users' computers)
+src/fjord/photos/*.jpg
+
+*.log
+.DS_Store
+Thumbs.db

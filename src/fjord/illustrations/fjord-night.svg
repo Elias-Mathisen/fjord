@@ -1,0 +1,23 @@
+<!-- Banner scene for setup and settings (dark theme): the same fjord at night -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 240" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#081624"/><stop offset=".75" stop-color="#1c3a56"/></linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22425f"/><stop offset="1" stop-color="#0d1f31"/></linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5fd0b4" stop-opacity="0"/><stop offset=".5" stop-color="#5fd0b4" stop-opacity=".35"/><stop offset="1" stop-color="#5fd0b4" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="720" height="240" fill="url(#sky)"/>
+  <path d="M60 70C220 20 420 96 660 40" stroke="url(#glow)" stroke-width="26" fill="none" stroke-linecap="round"/>
+  <g fill="#fff">
+    <circle cx="96" cy="34" r="1.3"/><circle cx="188" cy="58" r="1"/><circle cx="262" cy="26" r="1.4"/><circle cx="340" cy="62" r="1"/>
+    <circle cx="398" cy="22" r="1.2"/><circle cx="516" cy="48" r="1.4"/><circle cx="588" cy="20" r="1"/><circle cx="650" cy="70" r="1.2"/>
+    <circle cx="140" cy="92" r=".9"/><circle cx="604" cy="96" r=".9"/>
+  </g>
+  <circle cx="470" cy="98" r="14" fill="#e9f0f5"/><circle cx="476" cy="94" r="12" fill="#16314b"/>
+  <path d="M0 150 90 112 170 138 262 94 362 134 452 104 560 140 640 110 720 132V200H0z" fill="#25455f"/>
+  <path d="M0 86 84 66 170 118 260 176 300 196H0z" fill="#183450"/>
+  <path d="M720 76 636 60 552 110 462 174 420 196H720z" fill="#142e47"/>
+  <rect y="174" width="720" height="66" fill="url(#water)"/>
+  <path d="M300 190h120M318 204h84M336 218h48" stroke="#9fc2d8" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>
+  <path d="M0 118 54 100 126 150 196 240H0z" fill="#08131f"/>
+  <path d="M720 108 668 92 596 150 530 240H720z" fill="#0a1828"/>
+</svg>
