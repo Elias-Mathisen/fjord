@@ -342,6 +342,9 @@
   }
 
   // ---------- First-run setup ----------
+  // The profile next to the install (build.ps1's and the installer's layout), not a test profile
+  const installedProfile = () => PathUtils.profileDir == PathUtils.join(Services.dirsvc.get("GreD", Ci.nsIFile).parent.path, "profile");
+
   async function showSetup() {
     if (!claimOverlay()) return;
     const firstRun = !prefs.getBoolPref("fjord.setup.done", false);
@@ -349,8 +352,16 @@
       theme: prefs.getStringPref("fjord.theme", "dark"),
       protection: prefs.getStringPref("fjord.protection", "balanced"),
       search: firstRun ? "DuckDuckGo" : (await SearchService.getDefault()).name,
+      // makeDefault and pin: switched on when their step is first shown, so Skip setup changes neither
     };
     applyTheme(choice.theme);
+    // Asked here instead of by Firefox at its first start (Fjord.cfg turns those prompts off), so Windows' own "pin to
+    // taskbar?" prompt comes after you chose it, with Fjord's name and icon from its Start menu shortcut.
+    // Pinning needs that shortcut, which only the installed profile gets; the Mac pins to the Dock.
+    let isDefault = true;
+    try { isDefault = window.ShellService.isDefaultBrowser(false, false); } catch {}
+    const canPin = (AppConstants.platform == "macosx" || (AppConstants.platform == "win" && installedProfile())) &&
+      await window.ShellService.doesAppNeedPin().catch(() => false);
 
     // Same look as the installer: an ink drawing on the left, the logo and the step on the right
     const brand = () => h("div", { class: "ns-brand" }, h("img", { src: LOGO, alt: "" }), h("b", {}, "Fjord"));
@@ -376,6 +387,14 @@
       async () => [...head("Pick a search engine", "Used when you search from the address bar."),
         await engineChoices(choice.search, v => (choice.search = v)),
         nav()],
+      ...(!isDefault || canPin ? [() => [...head("Keep Fjord close", "Open links in Fjord and start it in one click. You can change both later."),
+        h("div", { class: "ns-group" },
+          isDefault ? null : switchRow("Make Fjord your default browser", "Links you open in other apps open in Fjord.",
+            choice.makeDefault ??= true, v => (choice.makeDefault = v)),
+          canPin ? switchRow(AppConstants.platform == "macosx" ? "Keep Fjord in the Dock" : "Pin Fjord to the taskbar",
+            AppConstants.platform == "macosx" ? "Fjord stays in the Dock after you quit it." : "Windows asks you to confirm once setup is done.",
+            choice.pin ??= true, v => (choice.pin = v)) : null),
+        nav()]] : []),
       () => [brand(),
         h("div", { class: "ns-end" },
           h("h1", {}, "You're all set"),
@@ -392,8 +411,9 @@
     const artBox = h("div", { class: "ns-setup-art" }, cabin, jetty);
     const overlay = openOverlay("Fjord setup",
       h("div", { class: "ns-card ns-setup" }, artBox, h("div", { class: "ns-setup-main" }, dots, body)));
-    // Each step frames the drawing a little further along, as if walking up to the cabin: [zoom, x %, y %]
-    const FRAMING = [[1.12, 4, 3], [1.09, 2, 1.5], [1.07, 0, 0], [1.05, -1.5, -1], [1.03, -3, -2], [1.06, 0, 0]];
+    // Each step frames the drawing a little further along, as if walking up to the cabin: [zoom, x %, y %].
+    // The last one is for the final step, however many steps come before it.
+    const FRAMING = [[1.12, 4, 3], [1.09, 2, 1.5], [1.07, 0, 0], [1.05, -1.5, -1], [1.03, -3, -2], [1.02, -4, -2.5], [1.06, 0, 0]];
     let step = 0;
     function nav() {
       return h("div", { class: "ns-actions ns-step-actions" }, btn("ns-link ns-back", "Back", back), btn("ns-primary", "Continue", next));
@@ -409,7 +429,7 @@
       body.querySelectorAll(".ns-end > *").forEach((c, n) => c.style.setProperty("--i", Math.min(n + 1, 6)));
       body.querySelectorAll(":is(.ns-tiles, .ns-options, .ns-pills, .ns-sources) > button")
         .forEach((b, n) => b.style.setProperty("--j", Math.min(n, 7)));
-      const [zoom, x, y] = FRAMING[i] ?? FRAMING[0];
+      const [zoom, x, y] = i === steps.length - 1 ? FRAMING.at(-1) : FRAMING[i] ?? FRAMING.at(-2);
       for (const img of [cabin, jetty]) img.style.transform = `scale(${zoom}) translate(${x}%, ${y}%)`;
       artBox.toggleAttribute("done", i === steps.length - 1);
       body.querySelector(".ns-primary")?.focus();
@@ -422,6 +442,8 @@
       applyTheme(choice.theme);
       applyProtection(choice.protection);
       prefs.setBoolPref("fjord.setup.done", true);
+      if (choice.makeDefault) window.ShellService.setDefaultBrowser(false).catch(console.error);
+      if (choice.pin) Promise.resolve(FJORD.shortcut).then(() => window.ShellService.pinToTaskbar()).catch(console.error);
       await setDefaultEngine(choice.search);
     }
     on(overlay, "keydown", e => { if (e.key === "Escape") finish(); });
@@ -778,16 +800,17 @@
     setPrivateEngine("DuckDuckGo").then(() => prefs.setBoolPref("fjord.privateSearch.set", true), console.error);
   }
 
-  // Windows names taskbar buttons after the Start menu shortcut that carries the window's taskbar ID.
-  // Only for the real profile next to the install (build.ps1's and the installer's layout), so test profiles don't take it over.
+  // Windows names taskbar buttons (and its pin prompt) after the Start menu shortcut that carries the window's taskbar ID.
+  // Only for the installed profile, so test profiles don't take it over.
+  FJORD.shortcut = Promise.resolve();
   const gre = Services.dirsvc.get("GreD", Ci.nsIFile);
-  if (AppConstants.platform == "win" && PathUtils.profileDir == PathUtils.join(gre.parent.path, "profile")) {
+  if (AppConstants.platform == "win" && installedProfile()) {
     const shell = Cc["@mozilla.org/browser/shell-service;1"].getService(Ci.nsIWindowsShellService);
     const taskbarID = Cc["@mozilla.org/windows-taskbar;1"].getService(Ci.nsIWinTaskbar).defaultGroupId;
     const icon = gre.clone();
     icon.append("fjord");
     icon.append("fjord.ico");
-    shell.createShortcut(Services.dirsvc.get("XREExeF", Ci.nsIFile), ["-profile", PathUtils.profileDir], "Fjord",
+    FJORD.shortcut = shell.createShortcut(Services.dirsvc.get("XREExeF", Ci.nsIFile), ["-profile", PathUtils.profileDir], "Fjord",
       icon, 0, taskbarID, "Programs", "Fjord.lnk").catch(console.error);
   }
 
