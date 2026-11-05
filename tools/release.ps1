@@ -72,3 +72,10 @@ if ((Get-AuthenticodeSignature $exe).Status -eq 'Valid') {
 gh release create "v$version" $exe "$exe.sig" $files "$files.sig" $install $dmg @appimages --repo $repo --title "Fjord $version" --notes $Notes
 if ($LASTEXITCODE) { throw 'Publishing the release failed' }
 Write-Host "Released Fjord $version."
+
+# Older releases become drafts, so GitHub only offers the newest (their tags stay; updaters only ask for the latest)
+gh release list --repo $repo --exclude-drafts --limit 100 --json tagName --jq '.[].tagName' |
+    Where-Object { $_ -ne "v$version" } | ForEach-Object {
+        gh release edit $_ --repo $repo --draft=true *> $null
+        if ($LASTEXITCODE) { Write-Warning "Couldn't make $_ a draft: https://github.com/$repo/releases" }
+    }

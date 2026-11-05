@@ -1,4 +1,8 @@
 {
+  "1.0.7": [
+    "Mac: Fjord.dmg opens a small window that shows you to drag Fjord into Applications.",
+    "Mac: Fjord starts with its own icon instead of Firefox's, and macOS no longer warns that Fjord tried to read another app's data."
+  ],
   "1.0.6": [
     "Private YouTube player: videos play on their own, without recommendations or your YouTube history. Turn it on the first time you watch something, or in Privacy.",
     "Randomised fingerprint: every site gets slightly different canvas, WebGL and audio readings, so sites can't use them to recognise you.",

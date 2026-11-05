@@ -85,7 +85,8 @@ powershell -ExecutionPolicy Bypass -File tools\release.ps1
 That pushes, has GitHub build `FjordSetup.exe`, `Fjord.dmg`, both AppImages and the files Macs and Linux
 update from (`fjord-files.tar.gz`) from the pushed code (`.github/workflows/build.yml`), where SignPath signs the
 installer for Windows, then signs the installer and `fjord-files.tar.gz` with Fjord's release key on your PC and
-publishes them all, with `install.sh`, as a GitHub release.
+publishes them all, with `install.sh`, as a GitHub release. Older releases become drafts, so only the newest can be
+downloaded.
 Installed copies check for it every 3 hours and only take an update signed with that key. The key is made once by
 `tools\make-release-key.ps1`; its private half stays in `%APPDATA%\Fjord release\` and must be backed up.
 
