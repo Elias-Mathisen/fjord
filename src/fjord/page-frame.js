@@ -2,8 +2,28 @@
 // runtime-registered JSWindowActors into web content, but frame scripts still run there):
 //  - permission watch: tells Fjord when a page uses location or reads the clipboard
 //  - design tools: "What font is this?" picker, a page's images, SVGs and fonts, the full page size
+//  - the ski jump game on the "you're offline" page
 // Requests come as "Fjord:Ask" { id, name } and are answered with "Fjord:Reply" { id, result }.
 (() => {
+  // ---------- Ski jump, when you're offline ----------
+  // Firefox's error page for a site that couldn't load, when that's because this computer has no network
+  addEventListener("DOMContentLoaded", e => {
+    const doc = e.target, win = doc.defaultView;
+    const code = /^about:neterror\?e=(\w+)/.exec(doc.documentURI)?.[1];
+    if (!win || win.browsingContext?.parent || !code) return; // the tab's page, not a frame in it
+    if (code !== "netOffline" && !(["dnsNotFound", "netTimeout", "connectionFailure", "netReset"].includes(code) && !win.navigator.onLine)) return;
+    if (!doc.body) return;
+    // Above Firefox's error card (a <net-error-card> since Firefox 159), in a box of its own
+    const box = doc.createElement("div");
+    box.style.cssText = "max-width: 600px; margin: 48px auto 0; padding: 0 24px;";
+    doc.body.prepend(box);
+    const { startSkiJump } = ChromeUtils.importESModule("resource://fjord/skijump.sys.mjs");
+    startSkiJump(win, box, {
+      best: Services.prefs.getIntPref("fjord.skijump.best", 0),
+      saveBest: m => sendAsyncMessage("Fjord:SkiJumpBest", { m }),
+    });
+  });
+
   // ---------- Permission watch ----------
   // The page's own functions are wrapped so Fjord hears about the call first; the page still gets the real thing.
   addEventListener("DOMWindowCreated", e => {

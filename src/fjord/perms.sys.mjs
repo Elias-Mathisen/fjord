@@ -18,6 +18,11 @@ Services.mm.addMessageListener("Fjord:Permission", m => {
 Services.mm.addMessageListener("Fjord:ClipboardChanged", m => {
   m.target.ownerDocument?.defaultView?.Fjord?.clipboardWarning?.(m.target, m.data);
 });
+// The ski jump game's best distance (page-frame.js), kept across restarts; pages can't set settings themselves
+Services.mm.addMessageListener("Fjord:SkiJumpBest", m => {
+  const best = Math.floor(Number(m.data.m));
+  if (best > Services.prefs.getIntPref("fjord.skijump.best", 0) && best < 1e7) Services.prefs.setIntPref("fjord.skijump.best", best);
+});
 Services.mm.addMessageListener("Fjord:Copy", m => {
   Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(String(m.data.text));
 });
