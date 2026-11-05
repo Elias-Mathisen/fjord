@@ -16,8 +16,8 @@ Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
 $archive = [IO.Compression.ZipFile]::Open($zip, 'Create')
 $files = @('defaults\pref\autoconfig.js', 'Fjord.cfg', 'distribution\policies.json',
            'browser\chrome\icons\default\main-window.ico', 'browser\chrome\icons\default\default.ico')
-# The new-tab photos aren't packed: the installer downloads them (listed in photos.js), which keeps it small
-$files += Get-ChildItem "$core\fjord" -Recurse -File | Where-Object { $_.DirectoryName -ne "$core\fjord\photos" } |
+# Only one new-tab photo is packed; Fjord downloads the rest itself (photos.sys.mjs), which keeps this small
+$files += Get-ChildItem "$core\fjord" -Recurse -File | Where-Object { $_.DirectoryName -ne "$core\fjord\photos" -or $_.Name -eq 'photo-001.jpg' } |
     ForEach-Object { $_.FullName.Substring($core.Length + 1) }
 foreach ($f in $files) {
     [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, (Join-Path $core $f), ($f -replace '\\', '/'), 'Optimal') | Out-Null

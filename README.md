@@ -103,11 +103,12 @@ Fjord collects nothing about you: there's no account, no usage data and no ads, 
 passwords stay on your computer. It doesn't send information to other computers unless you ask it to, apart from
 the connections it needs to work, which it lists live in Settings under **Fjord's connections**:
 
-- **The installer and updater:** Firefox and its version number from Mozilla (mozilla.org), new versions of Fjord
-  from GitHub, and the new-tab photos from Unsplash (images.unsplash.com)
+- **The installer and updater:** Firefox and its version number from Mozilla (mozilla.org), and new versions of
+  Fjord from GitHub
 - **The browser:** security lists, blocklists and tracker lists from Mozilla, Safe Browsing lists of dangerous sites
   (only short fingerprints of addresses are sent), filter list updates for uBlock Origin, Secure DNS through Quad9,
-  certificate checks, and video codecs (Mozilla, Google, Cisco)
+  certificate checks, video codecs (Mozilla, Google, Cisco), and the new-tab photos from Unsplash
+  (images.unsplash.com), downloaded once so new tabs never contact Unsplash
 - **Only when you use them:** site notifications you allowed, your location when a site asks and you allow it, and the
   sidebar apps you add
 

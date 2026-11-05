@@ -227,9 +227,7 @@ fi
 
 # ---------- Fjord's files ----------
 
-photos="$tmp/photos"
-mkdir -p "$photos"
-[ ! -d "$CORE/fjord/photos" ] || cp -R "$CORE/fjord/photos/." "$photos/"
+# One new-tab photo comes with these; Fjord downloads the rest itself, into the profile (photos.sys.mjs)
 rm -rf "$R/fjord" "$R/Fjord.cfg"
 mkdir -p "$R/defaults/pref" "$R/distribution" "$R/fjord"
 cp "$files/src/autoconfig.js" "$R/defaults/pref/"
@@ -237,17 +235,6 @@ cp "$files/src/Fjord.cfg" "$R/"
 cp "$files/src/policies.json" "$R/distribution/"
 cp -R "$files/src/fjord/." "$R/fjord/"
 cp "$files/tools/install.sh" "$R/fjord/install.sh" # so the Mac app from Fjord.dmg can set up its updater (Fjord.cfg)
-mkdir -p "$R/fjord/photos"
-cp -R "$photos/." "$R/fjord/photos/"
-# The new-tab photos, from Unsplash (listed in photos.js): only ones not already here. A failed one is skipped (the
-# new tab picks another) and fetched by the next update
-say "Downloading new-tab photos..."
-sed -n -e 's/.*"file": *"photos\/\([^"]*\)".*/\1/p' -e 's/.*"src": *"\(https:\/\/images\.unsplash\.com\/[^"]*\)".*/\1/p' \
-  "$R/fjord/photos.js" | sed 's/\\u0026/\&/g' | while read -r file && read -r url; do
-  [ ! -f "$R/fjord/photos/$file" ] || continue
-  if curl -fsSL --retry 2 -o "$R/fjord/photos/$file.part" "$url"; then mv "$R/fjord/photos/$file.part" "$R/fjord/photos/$file"
-  else rm -f "$R/fjord/photos/$file.part"; fi
-done
 
 if [ "$OS" = Darwin ]; then
   # Icon, name and its own identity, so it never mixes with a real Firefox

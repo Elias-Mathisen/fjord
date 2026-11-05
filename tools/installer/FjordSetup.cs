@@ -75,7 +75,6 @@ static class Program
         ReplaceCore(root, setup);
         progress("Adding Fjord…", 0.54);
         ApplyPayload(core);
-        DownloadPhotos(root, progress);
         Directory.CreateDirectory(Path.Combine(root, "profile"));
         ClearStartupCache(root);
 
@@ -119,7 +118,6 @@ static class Program
         }
         if (newFjord) Log(root, "Updating Fjord " + InstalledVersion(core) + " -> " + PayloadVersion());
         ApplyPayload(core);
-        DownloadPhotos(root, delegate { }); // only ones that are new or failed before
         ClearStartupCache(root);
         if (string.Equals(root, DefaultRoot, StringComparison.OrdinalIgnoreCase))
             CreateShortcuts(root, true); // their icon moved with Fjord's folder in 1.0.1
@@ -337,43 +335,6 @@ static class Program
         }
         Directory.Delete(old, true);
         File.Delete(Path.Combine(core, "nocturne.cfg"));
-    }
-
-    // New-tab photos: listed in photos.js (from the payload) and downloaded from Unsplash, so this program stays small.
-    // Only missing ones are fetched; ones no longer listed are removed. A failed photo is skipped (the new tab picks
-    // another) and retried by the next update.
-    static void DownloadPhotos(string root, Action<string, double> progress)
-    {
-        string dir = Path.Combine(root, "core", "fjord", "photos");
-        string list = File.ReadAllText(Path.Combine(root, "core", "fjord", "photos.js"));
-        var photos = new Dictionary<string, string>();
-        foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(list,
-            "\"file\":\\s*\"photos/(photo-\\d{3}\\.jpg)\"[^}]*?\"src\":\\s*\"(https://images\\.unsplash\\.com/[^\"]+)\""))
-            photos[m.Groups[1].Value] = m.Groups[2].Value.Replace("\\u0026", "&");
-        Directory.CreateDirectory(dir);
-        foreach (string f in Directory.GetFiles(dir)) if (!photos.ContainsKey(Path.GetFileName(f))) File.Delete(f);
-        int n = 0, failed = 0;
-        using (var web = new WebClient())
-        {
-            foreach (var p in photos)
-            {
-                n++;
-                progress(string.Format("Downloading new-tab photos ({0} of {1})…", n, photos.Count), 0.55 + 0.4 * n / photos.Count);
-                string target = Path.Combine(dir, p.Key);
-                if (File.Exists(target)) continue;
-                try
-                {
-                    web.DownloadFile(p.Value, target + ".part");
-                    File.Move(target + ".part", target);
-                }
-                catch
-                {
-                    failed++;
-                    if (File.Exists(target + ".part")) File.Delete(target + ".part");
-                }
-            }
-        }
-        if (failed > 0) Log(root, failed + " new-tab photos couldn't be downloaded; the next update tries again");
     }
 
     // Firefox caches its translated window per profile; cleared so a new version's text shows right away
@@ -638,7 +599,7 @@ class SetupWindow : Window
           <Grid>
             <Ellipse x:Name='Mark2' Width='20' Height='20' HorizontalAlignment='Left'/>
             <Path x:Name='Tick2' Data='M5.5,10.5 L8.5,13.5 L14.5,7' Stroke='White' StrokeThickness='2' StrokeStartLineCap='Round' StrokeEndLineCap='Round' StrokeLineJoin='Round' Width='20' Height='20' HorizontalAlignment='Left'/>
-            <TextBlock x:Name='Step2' Text='Add Fjord and the new-tab photos' FontSize='13' VerticalAlignment='Center' Margin='32,0,0,0'/>
+            <TextBlock x:Name='Step2' Text='Add Fjord' FontSize='13' VerticalAlignment='Center' Margin='32,0,0,0'/>
           </Grid>
         </StackPanel>
         <StackPanel x:Name='Meter'>
@@ -708,7 +669,7 @@ class SetupWindow : Window
     }
 
     // Program.Install reports the Firefox download up to 0.45, the signature check and unpacking up to 0.5, then adding
-    // Fjord and downloading the photos from 0.54
+    // Fjord from 0.54 (Fjord downloads the new-tab photos itself, after it starts)
     static int StepFor(double p) { return p < 0.47 ? 0 : p < 0.54 ? 1 : 2; }
 
     void SetProgress(string status, double p)

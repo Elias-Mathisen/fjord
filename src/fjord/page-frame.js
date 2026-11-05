@@ -5,23 +5,20 @@
 //  - the ski jump game on the "you're offline" page
 // Requests come as "Fjord:Ask" { id, name } and are answered with "Fjord:Reply" { id, result }.
 (() => {
-  // ---------- Ski jump, when you're offline ----------
-  // Firefox's error page for a site that couldn't load, when that's because this computer has no network
+  // ---------- The "you're offline" page ----------
+  // Firefox's error page for a site that couldn't load, when that's because this computer has no network (or Firefox
+  // is set to work offline): Fjord's own drawing and words, and the ski jump game (offline.sys.mjs)
   addEventListener("DOMContentLoaded", e => {
     const doc = e.target, win = doc.defaultView;
     const code = /^about:neterror\?e=(\w+)/.exec(doc.documentURI)?.[1];
-    if (!win || win.browsingContext?.parent || !code) return; // the tab's page, not a frame in it
+    if (!win || win.browsingContext?.parent || !code || !doc.body) return; // the tab's page, not a frame in it
     if (code !== "netOffline" && !(["dnsNotFound", "netTimeout", "connectionFailure", "netReset"].includes(code) && !win.navigator.onLine)) return;
-    if (!doc.body) return;
-    // Above Firefox's error card (a <net-error-card> since Firefox 159), in a box of its own
-    const box = doc.createElement("div");
-    box.style.cssText = "max-width: 600px; margin: 48px auto 0; padding: 0 24px;";
-    doc.body.prepend(box);
-    const { startSkiJump } = ChromeUtils.importESModule("resource://fjord/skijump.sys.mjs");
-    startSkiJump(win, box, {
+    const { dressOfflinePage } = ChromeUtils.importESModule("resource://fjord/offline.sys.mjs");
+    dressOfflinePage(win, {
+      offlineMode: code === "netOffline",
       best: Services.prefs.getIntPref("fjord.skijump.best", 0),
       saveBest: m => sendAsyncMessage("Fjord:SkiJumpBest", { m }),
-    });
+    }).catch(err => Cu.reportError(err));
   });
 
   // ---------- Permission watch ----------

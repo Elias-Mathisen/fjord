@@ -93,19 +93,28 @@
 <a id="credit" target="_blank" rel="noopener noreferrer"></a>
 <script src="photos.js"></script>
 <script>
-// Photo: a random one from the set that matches the current theme
+// Photo: a random one from the set that matches the current theme. One comes with Fjord (photos/photo-001.jpg); Fjord
+// downloads the rest once into the profile's fjord-photos folder, next to the stats file (photos.sys.mjs), and until
+// one is there the new tab shows the one that came with it
 const dark = matchMedia("(prefers-color-scheme: dark)");
 const photo = document.getElementById("photo"), credit = document.getElementById("credit");
-function pickPhoto(tries = 0) {
-  const set = PHOTOS[dark.matches ? "dark" : "light"];
-  const p = set[Math.floor(Math.random() * set.length)];
+const statsParam = new URLSearchParams(location.search).get("stats");
+const downloaded = statsParam && /^file:\/\/\/.+\/fjord-stats\.js$/.test(statsParam) ? statsParam.replace(/fjord-stats\.js$/, "fjord-photos/") : null;
+const bundled = [...PHOTOS.dark, ...PHOTOS.light].find(p => p.file === "photos/photo-001.jpg");
+function showPhoto(p, src, onerror) {
   photo.classList.remove("ready");
   photo.onload = () => photo.classList.add("ready");
-  // The installer downloads the photos; if one is missing, try another instead of showing a broken image
-  photo.onerror = () => { if (tries < 5) pickPhoto(tries + 1); else credit.textContent = ""; };
-  photo.src = p.file;
+  photo.onerror = onerror;
+  photo.src = src;
   credit.textContent = `Photo by ${p.by} on Unsplash`;
   credit.href = p.page;
+}
+function pickPhoto() {
+  const set = PHOTOS[dark.matches ? "dark" : "light"];
+  const p = set[Math.floor(Math.random() * set.length)];
+  const showBundled = () => showPhoto(bundled, bundled.file, () => { credit.textContent = ""; });
+  if (p === bundled || !downloaded) showBundled();
+  else showPhoto(p, downloaded + p.file.replace(/^photos\//, ""), showBundled);
 }
 dark.addEventListener("change", () => pickPhoto());
 pickPhoto();

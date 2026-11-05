@@ -2,8 +2,9 @@
 dist/
 dist-mac/
 
-# New-tab photos: downloaded by tools\get-photos.ps1 (and by the installer on users' computers)
+# New-tab photos: downloaded by tools\get-photos.ps1 (and by Fjord on users' computers); only the first ships with Fjord
 src/fjord/photos/*.jpg
+!src/fjord/photos/photo-001.jpg
 
 *.log
 .DS_Store

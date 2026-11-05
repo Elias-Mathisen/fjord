@@ -64,6 +64,8 @@
     const data = { blocked: etp + ubo, since: week.since ? `${week.since}T00:00` : since, week, layout: newtabLayout() };
     await IOUtils.writeUTF8(statsFile, `fjordStats(${JSON.stringify(data)});\n`, { tmpPath: statsFile + ".tmp" });
   };
+  // The new-tab photos that don't come with Fjord, downloaded once in the background (photos.sys.mjs)
+  ChromeUtils.importESModule("resource://fjord/photos.sys.mjs").fetchPhotos();
   // shortcut: refreshed on tab open and every 30 s, so the count can trail by a few seconds
   writeStats();
   gBrowser.tabContainer.addEventListener("TabOpen", writeStats);

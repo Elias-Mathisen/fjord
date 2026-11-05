@@ -189,6 +189,7 @@ const PURPOSES = [
   [/(^|\.)aus5\.mozilla\.org$/, "Video codec updates (the Firefox updater itself is off)"],
   [/(^|\.)gvt1\.com$|(^|\.)ciscobinary\.openh264\.org$/, "Video codecs, so Netflix, Spotify and video calls work"],
   [/api\.beacondb\.net$|location\.services\.mozilla\.com$/, "Your location, only when a site asks and you allow it"],
+  [/^images\.unsplash\.com$/, "New-tab photos, downloaded once (new tabs never contact Unsplash)"],
   [/(^|\.)telemetry\.mozilla\.org$/, "Usage data (should never appear: it's switched off)"],
 ];
 const connectionsByHost = new Map(); // host -> { host, purpose, by, count, first, last }
