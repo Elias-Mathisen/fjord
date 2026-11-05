@@ -28,9 +28,21 @@ export async function dressOfflinePage(win, { offlineMode, best, saveBest }) {
   canvas.getContext("2d").drawImage(drawing, 0, 0);
   canvas.setAttribute("aria-hidden", "true");
   const dark = win.matchMedia("(prefers-color-scheme: dark)");
+  // Try Again in Fjord's colours (chrome.css .ns-primary): near-white in dark mode, near-black in light. Firefox's
+  // <moz-button> takes its colours from these properties
+  const tryAgain = card.querySelector("#tryAgainButton");
   const theme = () => {
     canvas.style.cssText = "width: 280px; height: 210px; max-width: 100%; object-fit: contain;" +
       (dark.matches ? "filter: invert(1); mix-blend-mode: screen;" : "mix-blend-mode: multiply;");
+    const [bg, hover, fg] = dark.matches ? ["#ededed", "#ffffff", "#1e1e20"] : ["#1d1d1f", "#3a3a3d", "#ffffff"];
+    for (const [name, value] of Object.entries({
+      "--button-background-color-primary": bg, "--button-background-color-primary-hover": hover,
+      "--button-background-color-primary-active": hover, "--button-text-color-primary": fg,
+      "--button-text-color-primary-hover": fg, "--button-text-color-primary-active": fg,
+      "--button-border-color-primary": "transparent", "--button-border-radius": "11px", "--focus-outline-color": bg,
+    })) tryAgain?.style.setProperty(name, value);
+    // Its focus ring is drawn by the part inside, in Firefox's purple
+    tryAgain?.shadowRoot?.querySelector(".button-background")?.style.setProperty("outline-color", bg);
   };
   theme();
   dark.addEventListener("change", theme);
