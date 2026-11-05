@@ -74,9 +74,16 @@ jobs:
 
       - name: Make Fjord.dmg
         run: |
+          # The check's Fjord can linger and keep files busy; hdiutil on GitHub's Macs also fails now and then
+          pkill -f "^$RUNNER_TEMP/dmg/Fjord.app/" || true
           ln -s /Applications "$RUNNER_TEMP/dmg/Applications"
           mkdir -p dist
-          hdiutil create -volname Fjord -srcfolder "$RUNNER_TEMP/dmg" -ov -format ULMO dist/Fjord.dmg # LZMA: smallest, opens on macOS 10.15 and later
+          for i in 1 2 3; do
+            # LZMA: smallest, opens on macOS 10.15 and later
+            hdiutil create -volname Fjord -srcfolder "$RUNNER_TEMP/dmg" -ov -format ULMO dist/Fjord.dmg && break
+            [ $i = 3 ] && exit 1
+            sleep 15
+          done
 
       - uses: actions/upload-artifact@v7
         with:
