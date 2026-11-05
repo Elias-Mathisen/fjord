@@ -151,6 +151,7 @@
     ["design-assets", "Save images, SVGs and fonts", "Everything on this page, into a folder in Downloads.", needsPage(saveAssets)],
     ["design-screenshot", "Screenshot the whole page", "The full length of the page as a PNG, not just what's on screen.", needsPage(screenshot)],
   ];
+  Fjord.designTools = TOOLS.map(([, label, desc, run]) => ({ label, desc, run })); // for the command bar
   Fjord.openDesignPanel = anchor => {
     panel.replaceChildren(h("div", { class: "ns-shields ns-design" }, h("b", { class: "ns-design-title" }, "Design tools"),
       ...TOOLS.map(([icon, label, desc, fn]) => {

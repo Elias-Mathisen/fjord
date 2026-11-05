@@ -1,4 +1,11 @@
 {
+  "1.0.6": [
+    "Private YouTube player: videos play on their own, without recommendations or your YouTube history. Turn it on the first time you watch something, or in Privacy.",
+    "Randomised fingerprint: every site gets slightly different canvas, WebGL and audio readings, so sites can't use them to recognise you.",
+    "Hide parts of pages: right-click a cookie wall, sidebar or pop-up and choose “Hide this”. Shields can show it again.",
+    "Command bar: Ctrl+K (⌘K on a Mac) finds your tabs, bookmarks, history and Fjord's actions.",
+    "Link preview: Shift-click a link to open it over the page."
+  ],
   "1.0.5": [
     "After an update, Fjord tells you what's new, like this.",
     "Forget this site: one click in Shields deletes a site's cookies, saved data and history.",

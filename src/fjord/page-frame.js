@@ -49,7 +49,254 @@
     wrap(page.Clipboard?.prototype, "readText", "clipboard");
     wrap(page.Clipboard?.prototype, "read", "clipboard");
     guardClipboard(win, page);
+    noiseAudio(win, page);
+    applyHidden(win);
   });
+
+  // ---------- Link preview (features/glance.js) ----------
+  // Shift-click on a link opens it in a window over the page instead of a new window. Stopped here first, so neither
+  // the page nor Firefox's own link handling acts on it.
+  addEventListener("click", e => {
+    if (!e.isTrusted || !e.shiftKey || e.ctrlKey || e.altKey || e.metaKey || e.button !== 0 || e.defaultPrevented) return;
+    if (!Services.prefs.getBoolPref("fjord.glance.enabled", true)) return;
+    // composedPath() seen from here doesn't hold the page's elements; the innermost target does (closest() can't leave a
+    // shadow root, so a link drawn inside one isn't caught)
+    const target = e.originalTarget;
+    const link = Element.isInstance(target) ? target.closest("a[href], area[href]") : target?.parentElement?.closest("a[href], area[href]");
+    if (!link || !/^https?:/.test(link.href)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    sendAsyncMessage("Fjord:Glance", { url: link.href });
+  }, true);
+
+  // ---------- Parts of pages you hid (hidden.sys.mjs keeps the list) ----------
+  // A user style sheet per page, which the page can't override or remove. One rule per selector: a selector the
+  // browser can't read would cancel every other one in its rule.
+  const siteOf = host => { try { return Services.eTLD.getBaseDomainFromHost(host); } catch { return host; } };
+  const hideSheets = new WeakMap(); // document -> the CSS it got (the window stays the same across pages)
+  function applyHidden(win) {
+    if (!/^https?:$/.test(win.location.protocol)) return;
+    const s = (Services.cpmm.sharedData.get("Fjord:hidden") ?? {})[siteOf(win.location.hostname)];
+    const css = !s?.selectors.length ? "" : s.selectors.map(sel => `${sel} { display: none !important; }`).join("\n") +
+      (s.unlockScroll ? "\nhtml, body { overflow: auto !important; }" : "");
+    const old = hideSheets.get(win.document) ?? "";
+    if (old === css) return;
+    const wu = win.windowUtils;
+    if (old) try { wu.removeSheetUsingURIString(`data:text/css,${encodeURIComponent(old)}`, wu.USER_SHEET); } catch {}
+    if (css) wu.loadSheetUsingURIString(`data:text/css,${encodeURIComponent(css)}`, wu.USER_SHEET);
+    hideSheets.set(win.document, css);
+  }
+  Services.cpmm.sharedData.addEventListener("change", e => {
+    if (e.changedKeys.includes("Fjord:hidden") && content) applyHidden(content);
+  });
+
+  // "Hide this…" in the right-click menu (features/hide.js): starts from what you right-clicked, or the pop-up
+  // around it. Hover picks something else, ↑ and ↓ make the area bigger or smaller, a click or Enter hides it.
+  let lastContextTarget = null;
+  addEventListener("contextmenu", e => {
+    const t = e.originalTarget; // as for link preview: composedPath() from here doesn't hold the page's elements
+    lastContextTarget = Element.isInstance(t) ? t : t?.parentElement ?? null;
+  }, true);
+  addMessageListener("Fjord:HidePicker", () => { try { pickToHide(); } catch (e) { Cu.reportError(e); } });
+
+  // The outermost fixed part of the page around an element: a cookie wall, a newsletter box, a floating video
+  const overlayAround = el => {
+    let found = null;
+    for (let e = el; e && e !== content.document.body; e = e.parentElement) {
+      if (content.getComputedStyle(e).position === "fixed") found = e;
+    }
+    return found;
+  };
+  // A selector that finds this element again on the next visit: its id if it has a lasting one, else the path to it.
+  // It has to name something (an id or a class) or start from <body>, since it applies to every page of the site:
+  // a bare "p:nth-of-type(2)" would hide the second paragraph everywhere.
+  function selectorFor(el) {
+    const doc = el.ownerDocument, esc = s => content.CSS.escape(s);
+    const lasting = s => s && !/\d{3,}|[A-Z0-9]{6,}/.test(s) && s.length < 40;
+    const parts = [];
+    for (let e = el; e && e !== doc.documentElement; e = e.parentElement) {
+      if (lasting(e.id) && doc.querySelectorAll(`#${esc(e.id)}`).length === 1) {
+        parts.unshift(`#${esc(e.id)}`);
+      } else {
+        let part = e.localName + [...e.classList].filter(lasting).slice(0, 2).map(c => `.${esc(c)}`).join("");
+        const siblings = e.parentElement ? [...e.parentElement.children].filter(s => s.localName === e.localName) : [];
+        if (siblings.length > 1 && e.parentElement.querySelectorAll(`:scope > ${part}`).length > 1) {
+          part += `:nth-of-type(${siblings.indexOf(e) + 1})`;
+        }
+        parts.unshift(part);
+      }
+      const sel = parts.join(" > ");
+      const found = doc.querySelectorAll(sel);
+      if (found.length === 1 && found[0] === el && /[#.]/.test(sel)) return sel;
+      if (parts[0].startsWith("#")) break;
+    }
+    return parts.join(" > ");
+  }
+
+  let stopHiding = null;
+  function pickToHide() {
+    try { stopHiding?.(); } catch {} // a picker left open on a page that's gone
+    stopHiding = null;
+    const win = content, doc = win.document;
+    if (!/^https?:$/.test(win.location.protocol)) return;
+    const site = siteOf(win.location.hostname);
+    const host = doc.createElement("fjord-hide-picker");
+    const root = host.attachShadow({ mode: "closed" });
+    root.innerHTML = `<style>
+      .outline { position: fixed; z-index: 2147483646; pointer-events: none; border: 2px solid #ededed; border-radius: 4px;
+        background: rgb(30 30 32 / 0.25); box-shadow: 0 0 0 1px #1e1e20, 0 0 0 9999px rgb(0 0 0 / 0.12); }
+      .hint { position: fixed; z-index: 2147483647; top: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center;
+        max-width: calc(100vw - 48px); padding: 8px 8px 8px 16px; border-radius: 12px; background: #1e1e20; color: #ededed;
+        font: 13px/1.4 system-ui, sans-serif; box-shadow: 0 10px 30px rgb(0 0 0 / 0.35), 0 0 0 1px rgb(255 255 255 / 0.08); }
+      .hint button { font: inherit; padding: 6px 12px; border: none; border-radius: 8px; background: #ededed; color: #1e1e20; font-weight: 600; cursor: pointer; }
+      .hint button.plain { background: transparent; color: #a1a1a6; font-weight: 400; }
+      .hint button:focus-visible { outline: 2px solid #ededed; outline-offset: 2px; }
+    </style><div class="outline" hidden></div><div class="hint"><span></span><button class="plain">Cancel</button></div>`;
+    doc.documentElement.append(host);
+    const outline = root.querySelector(".outline"), hint = root.querySelector(".hint"), text = hint.querySelector("span");
+    text.textContent = `Click what you want gone from ${site}. ↑ picks the area around it.`;
+    let current = null, smaller = [];
+    const show = el => {
+      current = el;
+      if (!el) { outline.hidden = true; return; }
+      const r = el.getBoundingClientRect();
+      Object.assign(outline.style, { left: `${r.left - 2}px`, top: `${r.top - 2}px`, width: `${r.width}px`, height: `${r.height}px` });
+      outline.hidden = false;
+    };
+    const pageElement = e => {
+      const el = e.composedPath?.()[0] ?? e.target;
+      return el === host || !Element.isInstance(el) || el === doc.documentElement || el === doc.body ? null : el;
+    };
+    const start = lastContextTarget && doc.documentElement.contains(lastContextTarget) ? lastContextTarget : null;
+    show(start && (overlayAround(start) ?? start));
+
+    const hide = () => {
+      const el = current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const covers = r.width * r.height > 0.4 * win.innerWidth * win.innerHeight;
+      const fixed = el === overlayAround(el);
+      const selector = selectorFor(el);
+      el.style.setProperty("display", "none", "important");
+      if (fixed && covers) for (const x of [doc.documentElement, doc.body]) x?.style.setProperty("overflow", "auto", "important");
+      sendAsyncMessage("Fjord:Hide", { site, selector, unlockScroll: fixed && covers });
+      stop(false);
+      // A moment to take it back
+      text.textContent = `Hidden on ${site}. Shields can show it again.`;
+      button.textContent = "Undo";
+      button.className = "";
+      onButton = () => {
+        el.style.removeProperty("display");
+        sendAsyncMessage("Fjord:Unhide", { site, selector });
+        host.remove();
+      };
+      win.setTimeout(() => host.remove(), 5000);
+    };
+    const onMove = e => {
+      const el = pageElement(e);
+      if (el && el !== current && !current?.contains(el)) { smaller = []; show(el); }
+    };
+    const onClick = e => {
+      if (e.composedPath?.().includes(host)) return; // the hint's own buttons
+      e.preventDefault();
+      e.stopPropagation();
+      const el = pageElement(e);
+      if (el && !current?.contains(el)) show(el);
+      hide();
+    };
+    const onKey = e => {
+      if (e.key === "Escape") stop(true);
+      else if (e.key === "Enter") hide();
+      else if (e.key === "ArrowUp" && current?.parentElement && current.parentElement !== doc.body) { smaller.push(current); show(current.parentElement); }
+      else if (e.key === "ArrowDown" && smaller.length) show(smaller.pop());
+      else return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    // Clicks on links and buttons mustn't go through while picking
+    const swallow = e => { if (!e.composedPath?.().includes(host)) { e.preventDefault(); e.stopPropagation(); } };
+    const stop = removeHint => {
+      win.removeEventListener("mousemove", onMove, true);
+      win.removeEventListener("click", onClick, true);
+      win.removeEventListener("keydown", onKey, true);
+      for (const t of ["mousedown", "mouseup", "pointerdown", "pointerup"]) win.removeEventListener(t, swallow, true);
+      outline.hidden = true;
+      if (removeHint) host.remove();
+      stopHiding = null;
+    };
+    const button = hint.querySelector("button");
+    let onButton = () => stop(true); // Cancel, then Undo once something is hidden
+    button.addEventListener("click", () => onButton());
+    stopHiding = () => stop(true);
+    win.addEventListener("pagehide", () => { stopHiding = null; }, { once: true });
+    win.addEventListener("mousemove", onMove, true);
+    win.addEventListener("click", onClick, true);
+    win.addEventListener("keydown", onKey, true);
+    for (const t of ["mousedown", "mouseup", "pointerdown", "pointerup"]) win.addEventListener(t, swallow, true);
+  }
+
+  // ---------- Audio randomising ----------
+  // Trackers render a sound offline and add up the samples: the total differs a little from device to device. Fjord
+  // nudges every 64th sample by an inaudible amount (about a ten-millionth), the same for one site all session and
+  // different for every site, like Firefox does for canvas. Positions count from the start of the sound, so reading
+  // it in parts gives the same result.
+  // shortcut: frames from other sites run in their own process without this script, so their audio isn't randomised
+  function noiseAudio(win, page) {
+    const key = Services.cpmm.sharedData.get("Fjord:noiseKey");
+    if (!key || !Services.prefs.getBoolPref("fjord.fingerprint.randomise", true)) return;
+    let site = win.location.hostname;
+    try { site = Services.eTLD.getBaseDomainFromHost(site); } catch {}
+    let seed = key >>> 0;
+    for (const ch of site) seed = Math.imul(seed ^ ch.charCodeAt(0), 0x9e3779b1) >>> 0;
+    const nudge = i => {
+      let x = Math.imul(seed ^ i, 0x85ebca6b) >>> 0;
+      x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35) >>> 0;
+      return ((x >>> 8) / 0x1000000 - 0.5) * 2e-7;
+    };
+    const noise = (data, from = 0, scale = 1) => {
+      const a = Cu.waiveXrays(data);
+      for (let i = (64 - (from % 64)) % 64; i < a.length; i += 64) a[i] += nudge(from + i) * scale;
+    };
+    const done = new WeakSet(); // a buffer's own data is nudged once
+    const proto = page.AudioBuffer?.prototype;
+    const getData = proto?.getChannelData, copyFrom = proto?.copyFromChannel;
+    if (typeof getData === "function") {
+      Cu.exportFunction(function (channel) {
+        const data = getData.call(this, channel);
+        const raw = Cu.waiveXrays(data);
+        if (!done.has(raw)) { done.add(raw); noise(data); }
+        return data;
+      }, proto, { defineAs: "getChannelData" });
+    }
+    if (typeof copyFrom === "function") {
+      Cu.exportFunction(function (dest, channel, start = 0) {
+        copyFrom.call(this, dest, channel, start);
+        noise(dest, start >>> 0);
+      }, proto, { defineAs: "copyFromChannel" });
+    }
+    const analyser = page.AnalyserNode?.prototype, getFreq = analyser?.getFloatFrequencyData;
+    if (typeof getFreq === "function") {
+      Cu.exportFunction(function (dest) {
+        getFreq.call(this, dest);
+        noise(dest, 0, 1000); // decibels, around -100: a ten-millionth would be lost to rounding
+      }, analyser, { defineAs: "getFloatFrequencyData" });
+    }
+
+    // WebGL pixels read straight back from a canvas that isn't on the page (Firefox already randomises WebGL canvases
+    // saved as images): every 64th value flips its lowest bit, or not, by the same per-site key. Canvases on the page
+    // are left alone, because maps and games read exact colours back to tell what you clicked.
+    for (const gl of [page.WebGLRenderingContext?.prototype, page.WebGL2RenderingContext?.prototype]) {
+      const read = gl?.readPixels;
+      if (typeof read !== "function") continue;
+      Cu.exportFunction(function (...args) {
+        read.call(this, ...args);
+        const dest = args[6];
+        if (!ArrayBuffer.isView(Cu.waiveXrays(dest)) || this.canvas?.isConnected) return;
+        const a = Cu.waiveXrays(dest);
+        for (let i = 0; i < a.length; i += 64) if (nudge(i) > 0) a[i] ^= 1;
+      }, gl, { defineAs: "readPixels" });
+    }
+  }
 
   // ---------- Clipboard hijack guard ----------
   // A page can swap what you copy (a crypto address for its own, say). After the page has had its say on a copy (a
@@ -150,6 +397,7 @@
       host.remove();
       stopPicking = null;
     };
+    win.addEventListener("pagehide", () => { stopPicking = null; }, { once: true }); // or it could never start again
     win.addEventListener("mousemove", onMove, true);
     win.addEventListener("click", onClick, true);
     win.addEventListener("keydown", onKey, true);

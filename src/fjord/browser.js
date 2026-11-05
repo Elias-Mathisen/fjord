@@ -17,6 +17,7 @@
   const ublock = ChromeUtils.importESModule("resource://fjord/ublock.sys.mjs");
   const privacy = ChromeUtils.importESModule("resource://fjord/privacy.sys.mjs");
   const keylock = AppConstants.platform == "win" ? ChromeUtils.importESModule("resource://fjord/keylock.sys.mjs") : null;
+  const youtube = ChromeUtils.importESModule("resource://fjord/youtube.sys.mjs");
   const prefs = Services.prefs;
   const ART = "resource://fjord/illustrations/";
   const LOGO = "resource://fjord/branding/logo.png";
@@ -117,10 +118,18 @@
 
   // ---------- Protection levels ----------
   const FPP_STRICT = "+AllTargets,-CSSPrefersColorScheme,-JSDateTimeUTC"; // everything except dark mode and local time
+  // Randomising: Firefox gives each site its own made-up canvas readings (on by default), WebGL canvases saved as
+  // images included, from a key that changes every session. Fjord adds the same for audio and WebGL pixel reads
+  // (page-frame.js).
+  const RANDOM = "+CanvasRandomization,+WebGLRandomization", NOT_RANDOM = "-CanvasRandomization,-WebGLRandomization";
+  const RANDOMISE = "fjord.fingerprint.randomise";
+  function applyFingerprinting(level = prefs.getStringPref("fjord.protection", "balanced")) {
+    const random = prefs.getBoolPref(RANDOMISE, true) ? RANDOM : NOT_RANDOM;
+    prefs.setStringPref("privacy.fingerprintingProtection.overrides", level === "balanced" ? random : `${FPP_STRICT},${random}`);
+  }
   function applyProtection(level) {
     prefs.setStringPref("fjord.protection", level);
-    if (level === "balanced") prefs.clearUserPref("privacy.fingerprintingProtection.overrides");
-    else prefs.setStringPref("privacy.fingerprintingProtection.overrides", FPP_STRICT);
+    applyFingerprinting(level);
     if (level === "ghost") {
       prefs.setBoolPref("privacy.sanitize.sanitizeOnShutdown", true);
       for (const p of ["cookiesAndStorage", "browsingHistoryAndDownloads", "formdata", "cache"]) {
@@ -496,6 +505,10 @@
               "privacy.query_stripping.enabled", "privacy.query_stripping.enabled.pbmode", "privacy.query_stripping.strip_on_share.enabled"),
             prefSwitch("Skip tracking redirects", "Links that pass through Google, Facebook or others first go straight to the real site, so the middleman never sees your click.",
               "fjord.debounce.enabled"),
+            switchRow("Randomise your fingerprint", "Every site gets slightly different, made-up canvas, WebGL and audio readings, new each time Fjord starts, so sites can't use them to recognise you. Turn it off if a drawing or audio site acts up.",
+              prefs.getBoolPref(RANDOMISE, true), v => { prefs.setBoolPref(RANDOMISE, v); applyFingerprinting(); }),
+            switchRow("Private YouTube player", "YouTube videos play on their own in YouTube's privacy-enhanced player: no recommendations, comments or personalised ads, and nothing goes into your YouTube history. “Watch on YouTube” in the player opens the real page.",
+              youtube.enabled(), youtube.setEnabled),
             switchRow("Mozilla's AI features", "The AI chatbot sidebar and AI link previews. Page translation keeps working either way, on your computer.",
               aiOn(), setAI)),
           h("h3", {}, "Safety"),
@@ -755,21 +768,22 @@
   }
 
   // A short notice over one tab's page (top right), gone after a few seconds
-  function toast(browser, text, action) {
+  function toast(browser, text, action, ms = 7000) {
     const stack = browser.parentElement;
     stack.querySelector(".ns-toast")?.remove();
     const el = h("div", { class: "ns-toast", role: "status" }, h("span", {}, text),
       action ? btn("ns-link", action[0], () => { el.remove(); action[1](); }) : null);
     stack.append(el);
-    setTimeout(() => el.remove(), 7000);
+    setTimeout(() => el.remove(), ms);
   }
 
   window.Fjord = {
-    h, on, btn, icon, badge, choices, switchRow, prefSwitch, toast, showSettings, showLookalike, FPP_STRICT,
+    h, on, btn, icon, badge, choices, switchRow, prefSwitch, toast, showSettings, showLookalike, FPP_STRICT, applyTheme, THEMES,
+    siteOf: host => privacy.baseDomain(host),
     sections: {}, // settings sections from the feature scripts: { key: { label, desc, keys, after, render(ctx) } }
   };
   Services.scriptloader.loadSubScript("resource://fjord/shields.js", window);
-  for (const f of ["memory", "mist", "proveit", "permissions", "design", "workspaces", "proxy", "applock"]) {
+  for (const f of ["memory", "mist", "proveit", "permissions", "design", "workspaces", "proxy", "applock", "youtube", "hide", "commandbar", "glance"]) {
     try {
       Services.scriptloader.loadSubScript(`resource://fjord/features/${f}.js`, window);
     } catch (e) {
@@ -781,6 +795,12 @@
   // ---------- Once per session ----------
   if (FJORD.sessionChecked) return;
   FJORD.sessionChecked = true;
+
+  // Copies from before randomising (1.0.6) get it at their protection level
+  if (!prefs.getBoolPref("fjord.fingerprint.applied", false)) {
+    applyFingerprinting();
+    prefs.setBoolPref("fjord.fingerprint.applied", true);
+  }
 
   // Reader view in Fjord's look (reader.css); registered sheets reach every tab
   const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);

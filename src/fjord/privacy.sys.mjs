@@ -5,6 +5,7 @@
 //  - the lookalike-site check: stops pages whose name copies a popular site (paypa1.com) before they load
 import { TRACKERS } from "resource://fjord/trackers.sys.mjs";
 import { setInterval, clearInterval } from "resource://gre/modules/Timer.sys.mjs";
+import * as youtube from "resource://fjord/youtube.sys.mjs";
 
 const COMPANY = new Map();
 for (const [name, domains] of Object.entries(TRACKERS)) for (const d of domains) COMPANY.set(d, name);
@@ -238,6 +239,12 @@ function onRequest(subject) {
         triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
         loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY, // Back skips the redirect page too
       }));
+      return;
+    }
+    if (youtube.catches(channel.URI, info, top.browserId)) {
+      channel.cancel(Cr.NS_BINDING_ABORTED);
+      const video = youtube.videoOf(channel.URI);
+      withBrowser(top.browserId, browser => youtube.play(browser, video));
       return;
     }
     if (Services.prefs.getBoolPref("fjord.lookalike.enabled", true)) {

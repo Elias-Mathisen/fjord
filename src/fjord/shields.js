@@ -3,6 +3,7 @@
 (() => {
   const ublock = ChromeUtils.importESModule("resource://fjord/ublock.sys.mjs");
   const privacy = ChromeUtils.importESModule("resource://fjord/privacy.sys.mjs");
+  const hidden = ChromeUtils.importESModule("resource://fjord/hidden.sys.mjs");
   const { ContentBlockingAllowList } = ChromeUtils.importESModule("resource://gre/modules/ContentBlockingAllowList.sys.mjs");
   const { PrivateBrowsingUtils } = ChromeUtils.importESModule("resource://gre/modules/PrivateBrowsingUtils.sys.mjs");
   const { h, FPP_STRICT } = Fjord;
@@ -190,6 +191,18 @@
         if (level !== "lockdown") kids.push(ghost
           ? toggle("Stay signed in here", hasPerm("persist-data-on-shutdown", ALLOW_ACTION), on => setPerm("persist-data-on-shutdown", ALLOW_ACTION, on))
           : toggle("Forget this site when I close Fjord", hasPerm("cookie", SESSION), on => setPerm("cookie", SESSION, on)));
+        const hiddenHere = hidden.forSite(privacy.baseDomain(host)).length;
+        if (hiddenHere) {
+          const unhide = h("button", { class: "ns-link-row ns-forget" },
+            h("b", {}, hiddenHere === 1 ? "1 part of this site hidden" : `${hiddenHere} parts of this site hidden`),
+            h("span", {}, "Show them again."));
+          unhide.addEventListener("click", () => {
+            panel.hidePopup();
+            hidden.remove(privacy.baseDomain(host));
+            gBrowser.selectedBrowser.reload();
+          });
+          kids.push(unhide);
+        }
         const forget = h("button", { class: "ns-link-row ns-forget" }, h("b", {}, "Forget this site now"),
           h("span", {}, "Deletes its cookies, saved data and history now. You'll be signed out."));
         forget.addEventListener("click", () => { panel.hidePopup(); forgetSite(host).catch(console.error); });
@@ -203,6 +216,13 @@
     kids.push(settings);
     panel.replaceChildren(h("div", { class: "ns-shields" }, ...kids));
   }
+
+  // For the command bar: the same actions on the site in the current tab
+  Fjord.siteActions = {
+    LEVELS,
+    setLevel: level => site() && setLevel(site(), level),
+    forget: () => site() && forgetSite(site()).catch(console.error),
+  };
 
   button.addEventListener("click", async () => {
     await render();

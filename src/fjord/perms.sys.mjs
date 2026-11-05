@@ -10,6 +10,9 @@ let history = [];
 const loaded = IOUtils.readJSON(FILE).then(j => { history = j.history ?? []; }, () => {});
 const save = () => IOUtils.writeJSON(FILE, { history: history.slice(-KEEP) }, { tmpPath: FILE + ".tmp" }).catch(console.error);
 
+// The key page-frame.js makes each site's audio noise from: new every session, like Firefox's own for canvas
+Services.ppmm.sharedData.set("Fjord:noiseKey", crypto.getRandomValues(new Uint32Array(1))[0]);
+Services.ppmm.sharedData.flush();
 Services.mm.loadFrameScript("resource://fjord/page-frame.js", true);
 Services.mm.addMessageListener("Fjord:Permission", m => {
   if (m.data.host) recordUse(m.data.host, m.data.what, m.target, !!m.target.browsingContext?.usePrivateBrowsing);
@@ -22,6 +25,10 @@ Services.mm.addMessageListener("Fjord:ClipboardChanged", m => {
 Services.mm.addMessageListener("Fjord:SkiJumpBest", m => {
   const best = Math.floor(Number(m.data.m));
   if (best > Services.prefs.getIntPref("fjord.skijump.best", 0) && best < 1e7) Services.prefs.setIntPref("fjord.skijump.best", best);
+});
+// Link preview (page-frame.js): the tab's window shows it
+Services.mm.addMessageListener("Fjord:Glance", m => {
+  m.target.ownerDocument?.defaultView?.Fjord?.glance?.(m.target, String(m.data.url));
 });
 Services.mm.addMessageListener("Fjord:Copy", m => {
   Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(String(m.data.text));

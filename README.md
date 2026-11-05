@@ -15,6 +15,10 @@ follow every Firefox security update the day it ships.
 - **Ghost mode** (forget everything on close, with per-site exceptions), **Mist tabs** (throwaway tabs)
 - Warnings for **lookalike sites** (paypa1.com), **clipboard hijacking**, sites using your camera, microphone or location
 - **Skips tracking redirects** (google.com/url?q=…), **App lock** with Windows Hello / Touch ID
+- **Randomised fingerprint**: made-up canvas, WebGL and audio readings, different for every site and every session
+- **Private YouTube player** (YouTube's privacy-enhanced player, no recommendations or watch history) and
+  **Hide this** for cookie walls, sidebars and pop-ups
+- **Command bar** (Ctrl+K) for tabs, bookmarks, history and Fjord's actions, and **link preview** (Shift-click)
 - **Fjord's connections**: a live list of every connection Fjord itself makes
 - Sidebar apps (Spotify, WhatsApp…), Workspaces, Memory saver, design tools (colour picker, font finder, asset saver,
   full-page screenshots)
