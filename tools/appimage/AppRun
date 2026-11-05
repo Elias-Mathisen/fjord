@@ -1,0 +1,36 @@
+#!/bin/sh
+# Fjord for Linux as one file to open (Fjord-x86_64.AppImage, built by .github/workflows/build.yml). The first time,
+# it installs Fjord for this user from the files inside it with tools/install.sh (Firefox comes from Mozilla, checked
+# against Mozilla's signature), showing a progress window, then opens Fjord. After that Fjord is in the apps menu and
+# updates itself, so this file can be deleted; opening it again just opens Fjord.
+here="$(dirname "$(readlink -f "$0")")"
+data="${XDG_DATA_HOME:-$HOME/.local/share}/fjord"
+mine="$(cat "$here/src/fjord/version.txt")"
+have="$(cat "$data/core/fjord/version.txt" 2>/dev/null || true)"
+newer() { [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n 1)" = "$1" ]; }
+tell() {
+  if command -v zenity >/dev/null; then zenity --"$1" --title=Fjord --text="$2" --width=360 2>/dev/null
+  elif command -v kdialog >/dev/null; then kdialog --title Fjord --"${1%%-*}box" "$2" 2>/dev/null
+  else notify-send Fjord "$2" 2>/dev/null || echo "$2" >&2; fi
+}
+
+if { [ -z "$have" ] || newer "$mine" "$have"; } && ! pgrep -f "$data/core/" >/dev/null; then
+  log="$(mktemp)"
+  run_install() { FJORD_SRC="$here" sh "$here/tools/install.sh" >"$log" 2>&1; echo $? >"$log.done"; }
+  if command -v zenity >/dev/null; then
+    # zenity shows each "# line" as the current step
+    run_install &
+    { while [ ! -f "$log.done" ]; do tail -n 1 "$log" 2>/dev/null | sed 's/^/# /'; sleep 1; done; } |
+      zenity --progress --pulsate --auto-close --no-cancel --title=Fjord --text="Installing Fjord..." --width=360 2>/dev/null
+    wait
+  else
+    notify-send Fjord "Installing Fjord. It opens by itself in a minute or two." 2>/dev/null || true
+    run_install
+  fi
+  if [ "$(cat "$log.done")" != 0 ]; then
+    tell error "Fjord couldn't be installed: $(tail -n 1 "$log")"
+    exit 1
+  fi
+  rm -f "$log" "$log.done"
+fi
+exec "$data/core/firefox" --name fjord --class fjord -profile "$data/profile" "$@"
