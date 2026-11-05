@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fjord · The private browser built on Firefox</title>
-<meta name="description" content="Fjord blocks ads and trackers on every site, sends nothing about you anywhere, and runs on Firefox. Free for Windows.">
+<meta name="description" content="Fjord blocks ads and trackers on every site, sends nothing about you anywhere, and runs on Firefox. Free for Windows, Mac and Linux.">
 <meta property="og:title" content="Fjord · The private browser built on Firefox">
 <meta property="og:description" content="Ads and trackers blocked from the first page you open. No telemetry. Free.">
 <meta property="og:image" content="assets/newtab.jpg">
@@ -34,7 +34,7 @@
       <p>Fjord blocks ads and trackers on every site, sends nothing about you anywhere, and runs on Firefox, so it gets every security fix the day Mozilla ships it.</p>
       <div class="hero-actions">
         <a class="btn" href="https://github.com/Elias-Mathisen/fjord/releases/latest/download/FjordSetup.exe">Download for Windows</a>
-        <span class="muted">Free · Windows 10 and 11</span>
+        <span class="muted">Free · Windows 10 and 11 · <a href="#download">Mac and Linux</a></span>
       </div>
     </div>
     <figure class="hero-shot">
@@ -105,7 +105,7 @@
 
       <article class="feature">
         <h3>App lock</h3>
-        <p>On a shared computer, Fjord can ask for Windows Hello when it opens or after you've been away, and hides tab titles while it's locked.</p>
+        <p>On a shared computer, Fjord can ask for Windows Hello or Touch ID when it opens or after you've been away, and hides tab titles while it's locked.</p>
         <div class="spec"><span><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>L</kbd></span><span class="muted small">Lock now</span></div>
       </article>
 
@@ -162,10 +162,18 @@
         <p>Windows 10 and 11. Installs for your account only, no admin password needed, and keeps itself up to date.</p>
         <div class="spec"><a class="btn" href="https://github.com/Elias-Mathisen/fjord/releases/latest/download/FjordSetup.exe">Download for Windows</a></div>
       </div>
-      <div class="row soon"><h3>Mac</h3><p>Coming soon.</p></div>
-      <div class="row soon"><h3>Linux</h3><p>Coming soon.</p></div>
+      <div class="row">
+        <h3>Mac</h3>
+        <p>Apple silicon and Intel. Paste this into Terminal: it installs Fjord in Applications and keeps it up to date.</p>
+        <div class="spec"><code class="cmd">curl -fsSL https://github.com/Elias-Mathisen/fjord/releases/latest/download/install.sh | sh</code><button class="btn btn-small copy" type="button" data-copy="curl -fsSL https://github.com/Elias-Mathisen/fjord/releases/latest/download/install.sh | sh">Copy</button></div>
+      </div>
+      <div class="row">
+        <h3>Linux</h3>
+        <p>64-bit Intel/AMD or ARM. The same command in a terminal installs Fjord for your account, with an app menu entry, and keeps it up to date.</p>
+        <div class="spec"><code class="cmd">curl -fsSL https://github.com/Elias-Mathisen/fjord/releases/latest/download/install.sh | sh</code><button class="btn btn-small copy" type="button" data-copy="curl -fsSL https://github.com/Elias-Mathisen/fjord/releases/latest/download/install.sh | sh">Copy</button></div>
+      </div>
     </div>
-    <p class="muted small note">Windows may say it doesn't recognise the app yet. Choose “More info”, then “Run anyway”. The installer downloads Firefox straight from Mozilla and checks Mozilla's signature before installing.</p>
+    <p class="muted small note">Windows may say it doesn't recognise the app yet. Choose “More info”, then “Run anyway”. The installer downloads Firefox straight from Mozilla and checks Mozilla's signature before installing. On a Mac or Linux, the command does the same, then checks Fjord's own files against our release key.</p>
   </section>
 
   <section id="faq" class="section faq">
@@ -188,7 +196,7 @@
     </details>
     <details>
       <summary>Are my saved passwords safe if someone copies my files?</summary>
-      <p>Yes. Fjord locks them to your Windows account with a key only Windows can open, and you never have to type a password. A copy of your Fjord folder can't unlock them on another computer or account. Programs running on your own account can still ask Windows, so keep malware off your PC. Moving to a new PC? Export your passwords first.</p>
+      <p>On Windows, yes. Fjord locks them to your Windows account with a key only Windows can open, and you never have to type a password. A copy of your Fjord folder can't unlock them on another computer or account. Programs running on your own account can still ask Windows, so keep malware off your PC. Moving to a new PC? Export your passwords first. On a Mac or Linux, set a Primary Password in Settings to protect them the same way.</p>
     </details>
     <details>
       <summary>How does it update?</summary>

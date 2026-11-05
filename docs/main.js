@@ -38,3 +38,12 @@ if (!reduce) {
     .from(".dawn .far", { y: 60, ease: "none" }, 0)
     .from(".dawn .mid", { y: 30, ease: "none" }, 0);
 }
+
+// Copy buttons next to the install command
+for (const b of document.querySelectorAll("[data-copy]")) {
+  b.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; }
+    catch { b.textContent = "Select and copy it"; }
+    setTimeout(() => (b.textContent = "Copy"), 2000);
+  });
+}

@@ -25,7 +25,8 @@ follow every Firefox security update the day it ships.
 | Path | What it is |
 |---|---|
 | `build.ps1` | Builds Fjord for Windows into `dist\` (downloads Firefox from Mozilla, checks its signature) |
-| `build-mac.sh` | Builds `dist-mac/Fjord.app` on a Mac (`--install` copies it to /Applications) |
+| `tools/install.sh` | Installs and updates Fjord on a Mac or Linux (downloads Firefox from Mozilla, checks its signature) |
+| `build-mac.sh` | Installs Fjord on a Mac from this checkout (`tools/install.sh` with `FJORD_SRC`) |
 | `src/Fjord.cfg` | Firefox's autoconfig: Fjord's default settings, and loads everything below |
 | `src/policies.json` | Firefox enterprise policies (uBlock Origin, tracking protection, no telemetry) |
 | `src/fjord/browser.js` | Window script: new tab, setup, settings, sidebar apps, lookalike warning |
@@ -49,11 +50,22 @@ powershell -ExecutionPolicy Bypass -File tools\get-photos.ps1      # once: the n
 powershell -ExecutionPolicy Bypass -File tools\build-installer.ps1 # Fjord in dist\ and dist\FjordSetup.exe
 ```
 
-Mac:
+Mac (quit Fjord first; it installs to /Applications):
 
 ```sh
-sh build-mac.sh --install
+sh build-mac.sh
 ```
+
+Linux, from this checkout:
+
+```sh
+FJORD_SRC="$PWD" sh tools/install.sh
+```
+
+People install the latest release on a Mac or Linux with
+`curl -fsSL https://github.com/Elias-Mathisen/fjord/releases/latest/download/install.sh | sh`, and remove it with
+`sh ~/Library/Application\ Support/Fjord/updater/install.sh --uninstall` (Mac) or
+`sh ~/.local/share/fjord/updater/install.sh --uninstall` (Linux).
 
 ## Releasing
 
@@ -63,8 +75,9 @@ Fjord's version is in `src/fjord/version.txt`. Raise it, commit, then:
 powershell -ExecutionPolicy Bypass -File tools\release.ps1 "What's new"
 ```
 
-That pushes, has GitHub build `FjordSetup.exe` from the pushed code (`.github/workflows/build.yml`), where SignPath
-signs it for Windows, then signs it with Fjord's release key on your PC and publishes both as a GitHub release.
+That pushes, has GitHub build `FjordSetup.exe` and the Mac and Linux files (`fjord-files.tar.gz`) from the pushed code
+(`.github/workflows/build.yml`), where SignPath signs the installer for Windows, then signs both with Fjord's release
+key on your PC and publishes them, with `install.sh`, as a GitHub release.
 Installed copies check for it every 3 hours and only take an update signed with that key. The key is made once by
 `tools\make-release-key.ps1`; its private half stays in `%APPDATA%\Fjord release\` and must be backed up.
 

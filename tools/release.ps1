@@ -38,17 +38,23 @@ if ($LASTEXITCODE) {
     if ($LASTEXITCODE) { throw 'Downloading the build failed' }
 }
 $exe = Join-Path $out 'FjordSetup.exe'
+gh run download $run --repo $repo -n fjord-files -D $out
+if ($LASTEXITCODE) { throw 'Downloading the Mac and Linux files failed' }
+$files = Join-Path $out 'fjord-files.tar.gz'
+# install.sh straight from the release files, so the copy people download matches the one the updater gets
+tar -xzf $files -C $out tools/install.sh
+$install = Join-Path $out 'tools\install.sh'
 
-# The signature installed copies check before they update themselves (FjordSetup.cs, SignedByFjord)
+# The signatures installed copies check before they update themselves (FjordSetup.cs SignedByFjord, install.sh)
 $rsa = New-Object Security.Cryptography.RSACryptoServiceProvider
 $rsa.FromXmlString([IO.File]::ReadAllText($privateKey))
-[IO.File]::WriteAllBytes("$exe.sig", $rsa.SignData([IO.File]::ReadAllBytes($exe), 'SHA256'))
+foreach ($f in $exe, $files) { [IO.File]::WriteAllBytes("$f.sig", $rsa.SignData([IO.File]::ReadAllBytes($f), 'SHA256')) }
 
 if ((Get-AuthenticodeSignature $exe).Status -eq 'Valid') {
     $Notes += "`n`nFree code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org)."
 } else {
     Write-Warning "This installer isn't signed for Windows yet (SignPath isn't set up), so Windows and antivirus programs may warn about it."
 }
-gh release create "v$version" $exe "$exe.sig" --repo $repo --title "Fjord $version" --notes $Notes
+gh release create "v$version" $exe "$exe.sig" $files "$files.sig" $install --repo $repo --title "Fjord $version" --notes $Notes
 if ($LASTEXITCODE) { throw 'Publishing the release failed' }
 Write-Host "Released Fjord $version."

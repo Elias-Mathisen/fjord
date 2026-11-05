@@ -18,6 +18,16 @@ jobs:
         shell: powershell
         run: powershell -ExecutionPolicy Bypass -File tools\build-installer.ps1
 
+      # Fjord's files for tools/install.sh on Macs and Linux, straight from this commit
+      - name: Pack Mac and Linux files
+        run: git archive --format=tar.gz -o dist/fjord-files.tar.gz HEAD src/Fjord.cfg src/autoconfig.js src/policies.json src/icon.png src/fjord tools/install.sh LICENSE
+
+      - name: Upload Mac and Linux files
+        uses: actions/upload-artifact@v7
+        with:
+          name: fjord-files
+          path: dist/fjord-files.tar.gz
+
       - name: Upload unsigned installer
         id: unsigned
         uses: actions/upload-artifact@v7

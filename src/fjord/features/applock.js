@@ -1,6 +1,7 @@
 // App lock in each window: the lock screen (pages, tabs and toolbar are hidden, also from taskbar previews), "Lock
 // Fjord" in the ☰ menu and Ctrl+Alt+L, and its settings. The lock itself is applock.sys.mjs. Loaded by browser.js.
 (() => {
+  if (AppConstants.platform == "linux") return; // Linux has no system sign-in check (Firefox's OS reauthentication) to unlock with
   const { h, btn, choices, switchRow } = Fjord;
   const applock = ChromeUtils.importESModule("resource://fjord/applock.sys.mjs");
   const prefs = Services.prefs;
