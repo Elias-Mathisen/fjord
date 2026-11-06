@@ -132,10 +132,18 @@ def lists(refresh):
         print(f"{name}.json: {len(rules)} rules ({b} block, {h} hide, {e} exceptions)")
 
 
+# The new-tab photos the app ships with, picked from the computer's 100 for variety (coast, desert, forest in every
+# season, waterfalls, aurora, night sky, snow, one mountain), all from the dark ones so the white clock stays readable
+PHONE_PHOTOS = [1, 2, 4, 7, 14, 30, 32, 34, 37, 41, 43, 47, 52, 53, 56, 63, 64, 67, 71, 81, 86, 93, 95, 96, 100]
+
+
 def photos():
     src = open(os.path.join(ROOT, "src", "fjord", "photos.js"), encoding="utf-8").read()
     data = json.loads(src[src.index("{"):src.rindex("}") + 1])
-    wanted = {f"photo-{n:03}.jpg" for n in range(1, 11)}
+    wanted = {f"photo-{n:03}.jpg" for n in PHONE_PHOTOS}
+    for old in os.listdir(RES):  # ones picked before
+        if old.startswith("photo-") and old not in wanted:
+            os.remove(os.path.join(RES, old))
     picked = sorted((p for p in data["dark"] + data["light"] if os.path.basename(p["file"]) in wanted), key=lambda p: p["file"])
     meta = []
     for p in picked:
