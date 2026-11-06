@@ -66,102 +66,88 @@
       <figure class="art"><img src="assets/art/dial.jpg" alt="A hand turning a large dial with four settings" width="1200" height="1500" loading="lazy"></figure>
     </article>
   </section>
+  <!-- Also in Fjord: pick a feature on the left and its illustration and description show on the right (main.js) -->
   <section id="features" class="section">
     <h2>Also in Fjord</h2>
 
-    <div class="feature-grid">
-      <article class="feature">
-        <h3>Fake sites stopped</h3>
-        <p>Sites named to look like a popular one are stopped before they load, with a link to the real one. The check runs on your computer.</p>
-        <div class="spec">
-          <span class="url"><s>paypa<u>1</u>.com</s></span>
-          <span class="muted small">Did you mean paypal.com?</span>
+    <div class="explorer">
+      <div class="picker" role="tablist" aria-label="Features" aria-orientation="vertical">
+        <button role="tab" id="t-fake" aria-controls="p-fake" aria-selected="true">Fake sites stopped</button>
+        <button role="tab" id="t-redirect" aria-controls="p-redirect" aria-selected="false" tabindex="-1">No tracking redirects</button>
+        <button role="tab" id="t-youtube" aria-controls="p-youtube" aria-selected="false" tabindex="-1">A private YouTube player</button>
+        <button role="tab" id="t-print" aria-controls="p-print" aria-selected="false" tabindex="-1">A different fingerprint everywhere</button>
+        <button role="tab" id="t-clip" aria-controls="p-clip" aria-selected="false" tabindex="-1">Clipboard guard</button>
+        <button role="tab" id="t-hide" aria-controls="p-hide" aria-selected="false" tabindex="-1">Hide this</button>
+        <button role="tab" id="t-mist" aria-controls="p-mist" aria-selected="false" tabindex="-1">Mist tabs and Ghost mode</button>
+        <button role="tab" id="t-lock" aria-controls="p-lock" aria-selected="false" tabindex="-1">App lock</button>
+        <button role="tab" id="t-cmd" aria-controls="p-cmd" aria-selected="false" tabindex="-1">Command bar</button>
+        <button role="tab" id="t-glance" aria-controls="p-glance" aria-selected="false" tabindex="-1">Link preview</button>
+        <button role="tab" id="t-design" aria-controls="p-design" aria-selected="false" tabindex="-1">Tools for designers</button>
+        <button role="tab" id="t-apps" aria-controls="p-apps" aria-selected="false" tabindex="-1">Apps in the sidebar</button>
+      </div>
+
+      <div class="stage">
+        <!-- Each panel: an illustration, and what the feature does under it -->
+        <div class="panel" role="tabpanel" id="p-fake" aria-labelledby="t-fake">
+          <figure class="feat-art"><img src="assets/art/f-fake.jpg" alt="Two cabins on a fjord shore. One is only a painted front propped up with beams, and a signpost points to the real one" width="1200" height="900"></figure>
+          <p>Sites named to look like a popular one are stopped before they load, with a link to the real one. The check runs on your computer.</p>
         </div>
-      </article>
 
-      <article class="feature" data-redirect>
-        <h3>No tracking redirects</h3>
-        <p>Links that pass through Google, Facebook or a newsletter's click counter go straight to the real site, so the middleman never hears about it.</p>
-        <div class="spec">
-          <span class="url"><span class="cut">www.google.com/url?q=</span>en.wikipedia.org/wiki/Fjord<span class="cut">&amp;sa=D&amp;source=docs&amp;usg=AOvVaw0pX</span></span>
-          <span class="muted small">Fjord opens Wikipedia directly.</span>
+        <div class="panel" role="tabpanel" id="p-redirect" aria-labelledby="t-redirect">
+          <figure class="feat-art"><img src="assets/art/f-redirect.jpg" alt="A rowing boat crossing a fjord straight from one jetty to another, ignoring a long detour past a lighthouse toll" width="1200" height="900" loading="lazy"></figure>
+          <p>Links that pass through Google, Facebook or a newsletter's click counter go straight to the real site, so the middleman never hears about it.</p>
         </div>
-      </article>
 
-      <article class="feature">
-        <h3>A private YouTube player</h3>
-        <p>Videos play on their own in YouTube's privacy-enhanced player: no recommendations, no comments, and nothing goes into your YouTube history.</p>
-        <div class="spec">
-          <span class="url"><s>youtube.com/watch?v=…</s></span>
-          <span class="url">youtube-nocookie.com/embed/…</span>
+        <div class="panel" role="tabpanel" id="p-youtube" aria-labelledby="t-youtube">
+          <figure class="feat-art"><img src="assets/art/f-youtube.jpg" alt="A film projector in a cabin showing a mountain on a sheet, with the curtains drawn" width="1200" height="900" loading="lazy"></figure>
+          <p>Videos play on their own in YouTube's privacy-enhanced player: no recommendations, no comments, and nothing goes into your YouTube history.</p>
         </div>
-      </article>
 
-      <article class="feature">
-        <h3>A different fingerprint on every site</h3>
-        <p>Sites can recognise you by how your computer draws a picture or plays a sound. Fjord adds tiny made-up differences, new for every site and every time you start it.</p>
-        <dl class="spec swap" aria-label="Sample readings">
-          <dt>One site reads</dt><dd class="url">canvas 5d10db97</dd>
-          <dt>The next one reads</dt><dd class="url">canvas b5227de2</dd>
-        </dl>
-      </article>
-
-      <article class="feature">
-        <h3>Clipboard guard</h3>
-        <p>Some pages swap what you copy, so a wallet address or bank number you paste isn't the one you picked. Fjord notices and puts yours back.</p>
-        <dl class="spec swap">
-          <dt>You copied</dt><dd class="url">bc1q9h7d…ke4x</dd>
-          <dt>The page swapped in</dt><dd class="url"><s>bc1qx3mz…7f0n</s></dd>
-        </dl>
-      </article>
-
-      <article class="feature">
-        <h3>Hide this</h3>
-        <p>Right-click a cookie wall, a newsletter box or a sidebar you never read, and it's gone on that site from then on. Shields shows it again if you change your mind.</p>
-        <div class="spec">
-          <span class="menu-item">Hide this on example.com…</span>
-          <span class="muted small">In the right-click menu</span>
+        <div class="panel" role="tabpanel" id="p-print" aria-labelledby="t-print">
+          <figure class="feat-art"><img src="assets/art/f-print.jpg" alt="A row of carved wooden masks on hooks by a cabin door, each one a little different" width="1200" height="900" loading="lazy"></figure>
+          <p>Sites can recognise you by how your computer draws a picture or plays a sound. Fjord adds tiny made-up differences, new for every site and every time you start it.</p>
         </div>
-      </article>
 
-      <article class="feature">
-        <h3>Mist tabs and Ghost mode</h3>
-        <p>A Mist tab has its own cookies and forgets everything when you close it. Ghost mode does the same for all of Fjord, with exceptions for the sites you choose.</p>
-        <div class="spec"><span><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>M</kbd></span><span class="muted small">New Mist tab</span></div>
-      </article>
-
-      <article class="feature">
-        <h3>App lock</h3>
-        <p>On a shared computer, Fjord can ask for Windows Hello or Touch ID when it opens or after you've been away, and hides tab titles while it's locked.</p>
-        <div class="spec"><span><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>L</kbd></span><span class="muted small">Lock now</span></div>
-      </article>
-
-      <article class="feature">
-        <h3>Command bar</h3>
-        <p>One box for your open tabs, bookmarks, history and everything Fjord does. Type “lockdown”, “mist” or the name of a tab.</p>
-        <div class="spec"><span><kbd>Ctrl</kbd> <kbd>K</kbd></span><span class="muted small">⌘K on a Mac</span></div>
-      </article>
-
-      <article class="feature">
-        <h3>Link preview</h3>
-        <p>Shift-click a link and it opens in a window over the page, so you can read it without losing your place. Keep it as a tab, or press Esc.</p>
-        <div class="spec"><span><kbd>Shift</kbd> + click</span><span class="muted small">On any link</span></div>
-      </article>
-
-      <article class="feature">
-        <h3>Tools for designers</h3>
-        <p>Pick a colour from any page, see which font something uses, save every image, SVG and font on a page, or screenshot the whole page at once.</p>
-        <div class="spec">
-          <span class="swatch"><i></i><span class="url">#1E1E20</span></span>
-          <span class="muted small">Geist, weight 650, 84px</span>
+        <div class="panel" role="tabpanel" id="p-clip" aria-labelledby="t-clip">
+          <figure class="feat-art"><img src="assets/art/f-clip.jpg" alt="A magpie tries to swap a key on a windowsill, and a hand puts the right key back" width="1200" height="900" loading="lazy"></figure>
+          <p>Some pages swap what you copy, so a wallet address or bank number you paste isn't the one you picked. Fjord notices and puts yours back.</p>
         </div>
-      </article>
 
-      <article class="feature">
-        <h3>Apps in the sidebar</h3>
-        <p>Spotify, WhatsApp, Discord or any site you like, one click away and signed in, next to whatever you're reading.</p>
-        <div class="spec"><span>Spotify, WhatsApp, Discord, Telegram</span><span class="muted small">or any site</span></div>
-      </article>
+        <div class="panel" role="tabpanel" id="p-hide" aria-labelledby="t-hide">
+          <figure class="feat-art"><img src="assets/art/f-hide.jpg" alt="A hand peels a paper notice off a cabin window, uncovering the view of the fjord" width="1200" height="900" loading="lazy"></figure>
+          <p>Right-click a cookie wall, a newsletter box or a sidebar you never read, and it's gone on that site from then on. Shields shows it again if you change your mind.</p>
+        </div>
+
+        <div class="panel" role="tabpanel" id="p-mist" aria-labelledby="t-mist">
+          <figure class="feat-art"><img src="assets/art/f-mist.jpg" alt="A rowing boat gliding into thick mist on a still fjord, leaving no wake" width="1200" height="900" loading="lazy"></figure>
+          <p>A Mist tab has its own cookies and forgets everything when you close it. Ghost mode does the same for all of Fjord, with exceptions for the sites you choose.</p>
+        </div>
+
+        <div class="panel" role="tabpanel" id="p-lock" aria-labelledby="t-lock">
+          <figure class="feat-art"><img src="assets/art/f-lock.jpg" alt="A hand with a key at a heavy padlock on a cabin door" width="1200" height="900" loading="lazy"></figure>
+          <p>On a shared computer, Fjord can ask for Windows Hello or Touch ID when it opens or after you've been away, and hides tab titles while it's locked.</p>
+        </div>
+
+        <div class="panel" role="tabpanel" id="p-cmd" aria-labelledby="t-cmd">
+          <figure class="feat-art"><img src="assets/art/f-cmd.jpg" alt="A hand holding an open compass over a map of a fjord" width="1200" height="900" loading="lazy"></figure>
+          <p>One box for your open tabs, bookmarks, history and everything Fjord does. Press <span class="keys-inline"><kbd>Ctrl</kbd> <kbd>K</kbd></span>, or <span class="keys-inline"><kbd>⌘</kbd> <kbd>K</kbd></span> on a Mac, and type “lockdown”, “mist” or the name of a tab.</p>
+        </div>
+
+        <div class="panel" role="tabpanel" id="p-glance" aria-labelledby="t-glance">
+          <figure class="feat-art"><img src="assets/art/f-glance.jpg" alt="Someone on a cabin porch looking at a distant cabin through a spyglass, with the close-up view shown in a circle" width="1200" height="900" loading="lazy"></figure>
+          <p>Shift-click a link and it opens in a window over the page, so you can read it without losing your place. Keep it as a tab, or press Esc.</p>
+        </div>
+
+        <div class="panel" role="tabpanel" id="p-design" aria-labelledby="t-design">
+          <figure class="feat-art"><img src="assets/art/f-design.jpg" alt="A drawing desk by a window with brushes, ink pots, grey swatches and an eyedropper" width="1200" height="900" loading="lazy"></figure>
+          <p>Pick a colour from any page, see which font something uses, save every image, SVG and font on a page, or screenshot the whole page at once.</p>
+        </div>
+
+        <div class="panel" role="tabpanel" id="p-apps" aria-labelledby="t-apps">
+          <figure class="feat-art"><img src="assets/art/f-apps.jpg" alt="A reading chair by a window, with a radio, a telephone and letters on a shelf within reach" width="1200" height="900" loading="lazy"></figure>
+          <p>Spotify, WhatsApp, Discord or any site you like, one click away and signed in, next to whatever you're reading.</p>
+        </div>
+      </div>
     </div>
 
     <ul class="more">
