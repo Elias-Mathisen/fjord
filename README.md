@@ -22,7 +22,8 @@ follow every Firefox security update the day it ships.
 - **Privacy report**: week by week, which companies tried to track you and on which sites, counted on your computer
   and never sent anywhere (also on iPhone)
 - **Fjord's connections**: a live list of every connection Fjord itself makes
-- Sidebar apps (Spotify, WhatsApp…), Workspaces, Memory saver, design tools (colour picker, font finder, asset saver,
+- **Spaces**: separate sets of tabs like Work and Personal, each with its own colour and sign-ins
+- Sidebar apps (Spotify, WhatsApp…), Memory saver, design tools (colour picker, font finder, asset saver,
   full-page screenshots)
 - A new tab with 100 hand-picked Unsplash photos and privacy stats, reader view in Fjord's font, and a ski jump game
   when you're offline

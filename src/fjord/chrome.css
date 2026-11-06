@@ -745,3 +745,37 @@
   .ns-report-more { margin-top: 6px; }
   .ns-report-empty { margin-top: 18px !important; }
   .ns-overlay .ns-report-foot { margin-top: 28px; }
+
+  /* Spaces (features/spaces.js): the button at the start of the tabs, its panel, and the colours in settings */
+  #fjord-spaces-button :is(.toolbarbutton-icon, .toolbarbutton-text) { display: none !important; }
+  .fjord-space-name { display: flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 10px;
+    border-radius: var(--toolbarbutton-border-radius); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+  .fjord-space-name::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--fjord-space, var(--n-muted)); }
+  #fjord-spaces-button:hover .fjord-space-name { background: var(--toolbarbutton-hover-background); }
+  #fjord-spaces-button[open] .fjord-space-name { background: var(--toolbarbutton-active-background); }
+  #fjord-spaces { --arrowpanel-padding: 0; }
+  .ns-spaces { width: 260px; gap: 10px; padding: 10px; }
+  .ns-space-list { display: grid; gap: 2px; }
+  .ns-space-row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border: none; border-radius: 8px;
+    background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+  .ns-space-row:hover { background: var(--n-hover); }
+  .ns-space-row[aria-current="true"] { background: var(--n-accent-soft); }
+  .ns-space-row b { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ns-space-row[aria-current="true"] b { font-weight: 650; }
+  .ns-space-row span:last-child { color: var(--n-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .ns-space-row:focus-visible, .ns-swatch:focus-visible { outline: 2px solid var(--n-accent); outline-offset: 1px; }
+  .ns-space-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+  .ns-space-new { display: flex; gap: 6px; padding-top: 10px; border-top: 1px solid var(--n-line); }
+  .ns-space-new input { flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid var(--n-line); border-radius: 8px;
+    background: var(--n-bg); color: var(--n-text); font: inherit; }
+  .ns-space-new input:focus { border-color: var(--n-accent); outline: none; }
+  .ns-spaces .ns-secondary { padding: 7px 12px; color: var(--n-text); font: inherit; cursor: pointer; }
+  .ns-spaces .ns-link-row { margin: 0; }
+  .ns-space-setting { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto 64px; gap: 12px; padding-block: 10px; }
+  .ns-space-setting > span:nth-child(2) { display: grid; gap: 2px; }
+  .ns-space-setting > span:nth-child(2) > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ns-space-setting > span:nth-child(2) > span { color: var(--n-muted); font-size: 12.5px; }
+  .ns-swatches { display: flex; gap: 4px; }
+  .ns-swatch { width: 18px; height: 18px; padding: 0; border: 2px solid transparent; border-radius: 50%;
+    background: var(--c) content-box; cursor: pointer; }
+  .ns-swatch[aria-checked="true"] { border-color: var(--n-text); }

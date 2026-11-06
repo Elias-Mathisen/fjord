@@ -11,7 +11,7 @@
 
   // Firefox's own commands, by the id of their <command>
   const command = id => document.getElementById(id) && (() => document.getElementById(id).doCommand());
-  const SECTIONS = [["privacy", "Privacy"], ["appearance", "Appearance"], ["sidebar", "Sidebar"], ["newtab", "New tab"],
+  const SECTIONS = [["privacy", "Privacy"], ["appearance", "Appearance"], ["sidebar", "Sidebar"], ["workspaces", "Spaces"], ["newtab", "New tab"],
     ["connection", "Connection"], ["search", "Search"], ["import", "Import"], ["shortcuts", "Shortcuts"], ["about", "About"]];
 
   function actions() {
@@ -23,6 +23,7 @@
       { label: "New tab", keys: "open blank", run: command("cmd_newNavigatorTab") },
       { label: "New Mist tab", keys: "container throwaway forget cookies", run: () => Fjord.openMistTab() },
       { label: "New private window", keys: "incognito", run: () => OpenBrowserWindow({ private: true }) },
+      ...(Fjord.workspaces?.actions() ?? []), // features/spaces.js
       ...(site ? [
         { label: `Forget ${site} now`, keys: "delete cookies data history sign out clear site", run: s.forget },
         ...Object.entries(s.LEVELS).map(([level, [name, desc]]) => ({
