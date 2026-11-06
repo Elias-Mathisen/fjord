@@ -396,6 +396,102 @@ const PHOTOS = {
                      "by":  "Dave Hoefler",
                      "page":  "https://unsplash.com/photos/frmovOarYdE",
                      "src":  "https://images.unsplash.com/photo-1566419808810-658178380987?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-103.jpg",
+                     "by":  "Peter Herrmann",
+                     "page":  "https://unsplash.com/photos/F3J8xS_DlsA",
+                     "src":  "https://images.unsplash.com/photo-1791130711532-f2445711e9de?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-104.jpg",
+                     "by":  "Pascal Debrunner",
+                     "page":  "https://unsplash.com/photos/o7_pjm0V9-A",
+                     "src":  "https://images.unsplash.com/photo-1793024943995-f0f630995f13?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-105.jpg",
+                     "by":  "Robbin Grimm",
+                     "page":  "https://unsplash.com/photos/OywSd-8GsXE",
+                     "src":  "https://images.unsplash.com/photo-1793207095109-407f7aebf5ac?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-106.jpg",
+                     "by":  "Wolfgang Hasselmann",
+                     "page":  "https://unsplash.com/photos/wbrtZtfKYaY",
+                     "src":  "https://images.unsplash.com/photo-1793370159238-a9c165ceb8de?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-107.jpg",
+                     "by":  "Valentina Stanoaie",
+                     "page":  "https://unsplash.com/photos/F66myc-hi2o",
+                     "src":  "https://images.unsplash.com/photo-1792591342838-0bd7179a309a?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-108.jpg",
+                     "by":  "Wolfgang Hasselmann",
+                     "page":  "https://unsplash.com/photos/2ekxG8IOgz8",
+                     "src":  "https://images.unsplash.com/photo-1793278210916-e9a710b44d4b?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-109.jpg",
+                     "by":  "Viktorija Demjanenko",
+                     "page":  "https://unsplash.com/photos/H4AlZbGNrj0",
+                     "src":  "https://images.unsplash.com/photo-1793296640109-4f7e6e99fa58?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-110.jpg",
+                     "by":  "Egor Myznik",
+                     "page":  "https://unsplash.com/photos/kjFFXr8kAZA",
+                     "src":  "https://images.unsplash.com/photo-1792977228348-ed942a26b9dd?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-112.jpg",
+                     "by":  "Jan Suchánek",
+                     "page":  "https://unsplash.com/photos/AVc6BZDjLuE",
+                     "src":  "https://images.unsplash.com/photo-1787399651344-e863e438eaed?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-113.jpg",
+                     "by":  "Jeffrey Zhang",
+                     "page":  "https://unsplash.com/photos/O7JMJz7SHA0",
+                     "src":  "https://images.unsplash.com/photo-1790471403380-24e8149b8584?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-114.jpg",
+                     "by":  "Letian Zhang",
+                     "page":  "https://unsplash.com/photos/XVSDgA6RPmo",
+                     "src":  "https://images.unsplash.com/photo-1792939837410-5e33a7ade4b4?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-118.jpg",
+                     "by":  "Alexander Sinn",
+                     "page":  "https://unsplash.com/photos/i3iQwH_yUWg",
+                     "src":  "https://images.unsplash.com/photo-1792858653902-83f85b8f09ab?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-119.jpg",
+                     "by":  "Priyank Pathak",
+                     "page":  "https://unsplash.com/photos/6Vm6RwLvTOA",
+                     "src":  "https://images.unsplash.com/photo-1787533066806-d200665c442e?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-120.jpg",
+                     "by":  "Leo_Visions",
+                     "page":  "https://unsplash.com/photos/AHhM44IB2_Y",
+                     "src":  "https://images.unsplash.com/photo-1782199504441-a7f489a27f1b?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-123.jpg",
+                     "by":  "Adrian Infernus",
+                     "page":  "https://unsplash.com/photos/9mcNz4Xp0VA",
+                     "src":  "https://images.unsplash.com/photo-1792058308865-6f4e27281054?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                 },
+                 {
+                     "file":  "photos/photo-124.jpg",
+                     "by":  "Ingrid Eich",
+                     "page":  "https://unsplash.com/photos/Kd-qs7MyEDg",
+                     "src":  "https://images.unsplash.com/photo-1767930704291-a12b91e5a261?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
                  }
              ],
     "light":  [
@@ -602,6 +698,54 @@ const PHOTOS = {
                       "by":  "Eutah Mizushima",
                       "page":  "https://unsplash.com/photos/OWwK_0_EnxY",
                       "src":  "https://images.unsplash.com/photo-1442120108414-42e7ea50d0b5?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                  },
+                  {
+                      "file":  "photos/photo-101.jpg",
+                      "by":  "Daniel Seßler",
+                      "page":  "https://unsplash.com/photos/1rNillZrlZk",
+                      "src":  "https://images.unsplash.com/photo-1792443074929-4471c41c7a86?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                  },
+                  {
+                      "file":  "photos/photo-102.jpg",
+                      "by":  "Daniil Silantev",
+                      "page":  "https://unsplash.com/photos/g-_0cain0bY",
+                      "src":  "https://images.unsplash.com/photo-1792090894054-a5312e786da1?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                  },
+                  {
+                      "file":  "photos/photo-111.jpg",
+                      "by":  "Anirban Banerjee",
+                      "page":  "https://unsplash.com/photos/dh4cUbWGLvU",
+                      "src":  "https://images.unsplash.com/photo-1793174305066-394292e296e1?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                  },
+                  {
+                      "file":  "photos/photo-115.jpg",
+                      "by":  "Hombre",
+                      "page":  "https://unsplash.com/photos/8QMErV96QFk",
+                      "src":  "https://images.unsplash.com/photo-1793389464052-038a06bb3a68?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                  },
+                  {
+                      "file":  "photos/photo-116.jpg",
+                      "by":  "laura adai",
+                      "page":  "https://unsplash.com/photos/IafQGHZfcBI",
+                      "src":  "https://images.unsplash.com/photo-1791984417769-260efbbf2066?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                  },
+                  {
+                      "file":  "photos/photo-117.jpg",
+                      "by":  "Di Chen",
+                      "page":  "https://unsplash.com/photos/ydUlCRKgXlk",
+                      "src":  "https://images.unsplash.com/photo-1792396387936-0b639cc7baf7?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                  },
+                  {
+                      "file":  "photos/photo-121.jpg",
+                      "by":  "Daniel Seßler",
+                      "page":  "https://unsplash.com/photos/JtAuCe5hyhc",
+                      "src":  "https://images.unsplash.com/photo-1792443074886-8e37b01234bb?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
+                  },
+                  {
+                      "file":  "photos/photo-122.jpg",
+                      "by":  "Daniel Seßler",
+                      "page":  "https://unsplash.com/photos/AUPja_8Smd0",
+                      "src":  "https://images.unsplash.com/photo-1792089740991-158a986314c1?w=3840\u0026q=82\u0026fm=jpg\u0026fit=max"
                   }
               ]
 };

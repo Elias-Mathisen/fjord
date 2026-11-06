@@ -132,9 +132,10 @@ def lists(refresh):
         print(f"{name}.json: {len(rules)} rules ({b} block, {h} hide, {e} exceptions)")
 
 
-# The new-tab photos the app ships with, picked from the computer's 100 for variety (coast, desert, forest in every
-# season, waterfalls, aurora, night sky, snow, one mountain), all from the dark ones so the white clock stays readable
-PHONE_PHOTOS = [1, 2, 4, 7, 14, 30, 32, 34, 37, 41, 43, 47, 52, 53, 56, 63, 64, 67, 71, 81, 86, 93, 95, 96, 100]
+# The new-tab photos the app ships with, picked from the computer's list for variety (coast, desert, forest, ice,
+# night sky, waterfall, flowers, one mountain): only recent Unsplash editorial picks (2025 and later; the older ones
+# look like stock photos on a phone), and only dark ones so the white clock stays readable
+PHONE_PHOTOS = [1, 2, 4, 7, 9, 16, 21, 32, 49, 97, 104, 105, 107, 108, 109, 110, 112, 113, 114, 118, 119, 120, 123, 124]
 
 
 def photos():
@@ -150,8 +151,12 @@ def photos():
         name = os.path.basename(p["file"])
         out = os.path.join(RES, name)
         if not os.path.exists(out):
-            subprocess.run(["sips", "-Z", "2400", "-s", "formatOptions", "78", os.path.join(ROOT, "src", "fjord", p["file"]), "--out", out],
-                           check=True, stdout=subprocess.DEVNULL)
+            # Full resolution, cropped to the middle square: the new tab fills a tall phone screen (or an iPad) from the
+            # middle of the photo, and anything smaller is stretched and looks soft
+            src = os.path.join(ROOT, "src", "fjord", p["file"])
+            dims = subprocess.run(["sips", "-g", "pixelWidth", "-g", "pixelHeight", src], capture_output=True, text=True, check=True).stdout
+            side = str(min(int(n) for n in re.findall(r"pixel(?:Width|Height): (\d+)", dims)))
+            subprocess.run(["sips", "-c", side, side, "-s", "formatOptions", "74", src, "--out", out], check=True, stdout=subprocess.DEVNULL)
         meta.append({"file": name, "by": p["by"], "page": p["page"]})
     with open(os.path.join(RES, "photos.json"), "w") as f:
         json.dump(meta, f, indent=1)
