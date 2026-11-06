@@ -44,6 +44,7 @@ enum Hidden {
         UserDefaults.standard.set(unlocking.filter { $0 != site }, forKey: Setting.unlockScroll)
     }
     static var sites: [(site: String, count: Int)] { all.map { ($0.key, $0.value.count) }.sorted { $0.site < $1.site } }
+    static var everything: [String: [String]] { all } // for Sync
 }
 
 struct SearchEngine: Identifiable {

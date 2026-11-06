@@ -786,7 +786,7 @@
     sections: {}, // settings sections from the feature scripts: { key: { label, desc, keys, after, render(ctx) } }
   };
   Services.scriptloader.loadSubScript("resource://fjord/shields.js", window);
-  for (const f of ["memory", "mist", "proveit", "report", "permissions", "design", "spaces", "proxy", "applock", "youtube", "hide", "commandbar", "glance"]) {
+  for (const f of ["memory", "mist", "proveit", "report", "permissions", "design", "spaces", "proxy", "applock", "youtube", "hide", "commandbar", "glance", "sync"]) {
     try {
       Services.scriptloader.loadSubScript(`resource://fjord/features/${f}.js`, window);
     } catch (e) {

@@ -13,11 +13,12 @@ final class History {
         var visits: Int
         var last: Date
     }
+    enum Kind { case visited, bookmark, wellKnown }
     struct Suggestion: Identifiable {
         let url: URL
         let title: String
         let address: String // without https:// and www., as it's typed
-        let visited: Bool
+        let kind: Kind
         var id: String { url.absoluteString }
     }
 
@@ -71,6 +72,31 @@ final class History {
         scheduleSave()
     }
 
+    /// This iPhone's visits since `date`, most recent first, for Sync
+    func visits(since date: Date) -> [Visit] {
+        Array(visits.values.filter { $0.last > date }.sorted { $0.last > $1.last }.prefix(5000))
+    }
+
+    /// Visits from the computer (Sync): new sites are added, known ones take the later visit and a missing title
+    func merge(_ list: [(url: URL, title: String, time: Date)]) {
+        guard Self.keeping, !list.isEmpty else { return }
+        for v in list where v.url.scheme == "https" || v.url.scheme == "http" {
+            let key = Self.address(v.url)
+            var visit = visits[key] ?? Visit(url: v.url, title: v.title, visits: 0, last: .distantPast)
+            if v.time > visit.last {
+                visit.last = min(v.time, .now)
+                visit.visits += 1
+            }
+            if visit.title.isEmpty { visit.title = v.title }
+            visits[key] = visit
+        }
+        if visits.count > Self.limit + 100 {
+            let keep = visits.sorted { Self.score($0.value) > Self.score($1.value) }.prefix(Self.limit)
+            visits = Dictionary(uniqueKeysWithValues: keep.map { ($0.key, $0.value) })
+        }
+        scheduleSave()
+    }
+
     // Visited often and lately counts most: a visit loses half its weight in a fortnight
     private static func score(_ v: Visit) -> Double {
         Double(v.visits) * pow(0.5, -v.last.timeIntervalSinceNow / (14 * 86400))
@@ -106,7 +132,7 @@ final class History {
         let words = text.split(separator: " ").map(String.init)
         var byAddress: [(Suggestion, Double)] = [], byTitle: [(Suggestion, Double)] = []
         for (address, v) in visits {
-            let s = Suggestion(url: v.url, title: v.title, address: address, visited: true)
+            let s = Suggestion(url: v.url, title: v.title, address: address, kind: .visited)
             if Self.match(address, text) != nil {
                 byAddress.append((s, Self.score(v) + (address.contains("/") ? 0 : 1000))) // a site before its pages
             } else {
@@ -115,6 +141,15 @@ final class History {
             }
         }
         var list = byAddress.sorted { $0.1 > $1.1 }.map(\.0) + byTitle.sorted { $0.1 > $1.1 }.map(\.0)
+        // Bookmarks from the computer (Sync), for sites this iPhone hasn't been to
+        for b in Sync.shared.bookmarks where list.count < limit * 2 {
+            let address = Self.address(b.url)
+            guard !list.contains(where: { $0.address == address }) else { continue }
+            let title = b.title.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+            if Self.match(address, text) != nil || words.allSatisfy({ w in title.contains { $0.hasPrefix(w) } }) {
+                list.append(Suggestion(url: b.url, title: b.title, address: address, kind: .bookmark))
+            }
+        }
         for site in Self.wellKnown where site.address.hasPrefix(text) && !list.contains(where: { $0.address == site.address }) {
             list.append(site)
         }
@@ -140,7 +175,7 @@ final class History {
         ("apple.com", "Apple"), ("microsoft.com", "Microsoft"), ("outlook.com", "Outlook"), ("gmail.com", "Gmail"),
         ("chatgpt.com", "ChatGPT"), ("claude.ai", "Claude"), ("pinterest.com", "Pinterest"), ("imdb.com", "IMDb"),
         ("weather.com", "The Weather Channel"), ("discord.com", "Discord"), ("paypal.com", "PayPal"),
-    ].map { Suggestion(url: URL(string: "https://" + $0.0)!, title: $0.1, address: $0.0, visited: false) }
+    ].map { Suggestion(url: URL(string: "https://" + $0.0)!, title: $0.1, address: $0.0, kind: .wellKnown) }
 
     private func scheduleSave() {
         guard !dirty else { return }

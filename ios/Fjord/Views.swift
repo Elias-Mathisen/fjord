@@ -113,6 +113,15 @@ struct BrowserView: View {
         .task { // Simulator tests: -FjordOpen <address> opens a page, -FjordShow settings|shields|tabs a sheet
             let args = ProcessInfo.processInfo.arguments
             if let i = args.firstIndex(of: "-FjordOpen"), i + 1 < args.count { browser.go(args[i + 1]) }
+            if let i = args.firstIndex(of: "-FjordPair"), i + 1 < args.count { // pairs without the camera
+                Sync.shared.browser = browser
+                do { try await Sync.shared.pair(args[i + 1]); print("FJORD-SYNC paired") } catch { print("FJORD-SYNC failed: \(error)") }
+            }
+            if args.contains("-FjordSyncNow") { // a sync once the tabs have loaded, whenever the last one was
+                Sync.shared.browser = browser
+                try? await Task.sleep(for: .seconds(25))
+                Sync.shared.syncNow()
+            }
             if let i = args.firstIndex(of: "-FjordShow"), i + 1 < args.count {
                 try? await Task.sleep(for: .seconds(4))
                 switch ProcessInfo.processInfo.arguments[i + 1] {
@@ -449,7 +458,7 @@ struct SuggestionList: View {
             ForEach(Array(suggestions.enumerated().reversed()), id: \.element.id) { rank, s in
                 Button { open(s) } label: {
                     HStack(spacing: 12) {
-                        Image(systemName: s.visited ? "clock" : "globe")
+                        Image(systemName: s.kind == .visited ? "clock" : s.kind == .bookmark ? "book" : "globe")
                             .font(.fjord(.subheadline)).foregroundStyle(.secondary).frame(width: 22)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(s.title.isEmpty ? s.address : s.title).lineLimit(1)
@@ -805,8 +814,10 @@ struct TabsView: View {
                     }
                     .padding(.horizontal, 18)
                     .padding(.top, 12)
-                    .padding(.bottom, 96)
                     .animation(.fjord, value: browser.tabs.map(\.id))
+                    ComputerTabs()
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 96)
                 }
                 .onAppear { if let id = browser.current?.id { proxy.scrollTo(id, anchor: .center) } }
             }
@@ -826,6 +837,40 @@ struct TabsView: View {
             .padding(.horizontal, 16)
             .padding(.top, 6)
             .background(.bar)
+        }
+    }
+}
+
+// The tabs open on the paired computer (Sync), under this iPhone's own
+struct ComputerTabs: View {
+    @EnvironmentObject var browser: Browser
+    @ObservedObject private var sync = Sync.shared
+
+    var body: some View {
+        if let computer = sync.computer, !sync.tabs.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Open on \(computer.name)").font(.fjord(.headline)).padding(.top, 30)
+                VStack(spacing: 0) {
+                    ForEach(sync.tabs) { page in
+                        Button { browser.newTab(page.url); browser.showingTabs = false } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "desktopcomputer").foregroundStyle(.secondary).frame(width: 24)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(page.title.isEmpty ? page.url.host() ?? "" : page.title).lineLimit(1)
+                                    Text(page.url.host()?.replacingOccurrences(of: "www.", with: "") ?? "")
+                                        .font(.fjord(.footnote)).foregroundStyle(.secondary).lineLimit(1)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, 14).frame(minHeight: 54).contentShape(Rectangle())
+                        }
+                        .buttonStyle(SuggestionRow())
+                        if page != sync.tabs.last { Divider().padding(.leading, 50) }
+                    }
+                }
+                .padding(.vertical, 4)
+                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
         }
     }
 }
@@ -1084,6 +1129,7 @@ struct SettingsView: View {
                 } header: { Text("YouTube") } footer: {
                     Text("Videos play on their own in YouTube's privacy-enhanced player: no recommendations, comments or personalised ads, and nothing goes into your YouTube history. AirPlay and picture-in-picture still work, and the cast button sends the video to a Chromecast. “Watch on YouTube” in the player opens the real page.")
                 }
+                SyncSection()
                 Section("Search") {
                     Picker("Search engine", selection: $engine) {
                         ForEach(SearchEngine.all) { Text($0.name).tag($0.name) }

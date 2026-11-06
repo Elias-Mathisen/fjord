@@ -27,6 +27,7 @@ export function remove(site, selector) {
 }
 export const forSite = site => sites[site]?.selectors ?? [];
 export const all = () => Object.entries(sites).map(([site, s]) => ({ site, count: s.selectors.length }));
+export const selectors = () => Object.fromEntries(Object.entries(sites).map(([site, s]) => [site, [...s.selectors]])); // for sync.sys.mjs
 
 Services.mm.addMessageListener("Fjord:Hide", m => {
   if (m.target.browsingContext?.usePrivateBrowsing) return; // hidden for this visit only, nothing saved

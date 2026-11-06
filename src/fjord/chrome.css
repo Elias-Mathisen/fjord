@@ -736,6 +736,18 @@
   .ns-report-step:disabled { opacity: 0.35; }
   .ns-report-step:focus-visible { outline: 2px solid var(--n-accent); outline-offset: 1px; }
   .ns-report-next .ns-icon { transform: scaleX(-1); }
+  /* Sync with iPhone (features/sync.js) */
+  .ns-sync { display: grid; gap: 14px; justify-items: start; margin-top: 18px; }
+  .ns-sync > .ns-group, .ns-sync > h3 { justify-self: stretch; }
+  .ns-sync-pair { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; padding: 20px; border: 1px solid var(--n-line); border-radius: 16px; background: var(--n-raised); }
+  .ns-sync-pair > div { display: grid; gap: 10px; flex: 1 1 240px; justify-items: start; }
+  .ns-sync-pair ol { margin: 0; padding-inline-start: 20px; display: grid; gap: 6px; }
+  .ns-sync-qr { width: 200px; height: 200px; border-radius: 12px; background: #fff; image-rendering: pixelated; }
+  .ns-sync-name, .ns-sync-tab { display: grid; gap: 2px; flex: 1; min-width: 0; text-align: start; }
+  .ns-sync-tab { width: 100%; padding-block: 10px !important; border: none; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+  .ns-sync-tab:hover { background: var(--n-hover); }
+  .ns-sync-tab > b, .ns-sync-tab > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ns-sync-foot { margin-top: 18px !important; }
   .ns-report-total { display: flex; align-items: center; gap: 14px; margin-top: 22px; }
   .ns-report-total > b { font-size: 40px; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
   .ns-report-total > span { display: grid; gap: 2px; font-size: 14px; }

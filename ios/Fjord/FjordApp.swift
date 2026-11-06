@@ -12,6 +12,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         #if DEBUG
         Privacy.selfCheck()
         History.selfCheck()
+        Sync.selfCheck()
         #endif
         Cast.shared.setUp()
         let bar = UINavigationBar.appearance()
@@ -45,8 +46,18 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, openURLContexts contexts: Set<UIOpenURLContext>) {
         for context in contexts { browser.handle(context.url) }
     }
-    func sceneDidBecomeActive(_ scene: UIScene) { lock.phaseChanged(.active) }
-    func sceneWillResignActive(_ scene: UIScene) { lock.phaseChanged(.inactive) }
+    private var syncTimer: Timer?
+    // Sync with the paired computer when Fjord comes to the front, and every 5 minutes while it's open
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        lock.phaseChanged(.active)
+        Sync.shared.browser = browser
+        Sync.shared.syncIfDue()
+        syncTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { _ in MainActor.assumeIsolated { Sync.shared.syncIfDue() } }
+    }
+    func sceneWillResignActive(_ scene: UIScene) {
+        lock.phaseChanged(.inactive)
+        syncTimer?.invalidate()
+    }
 }
 
 struct RootView: View {
