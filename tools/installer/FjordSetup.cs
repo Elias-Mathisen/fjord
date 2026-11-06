@@ -210,6 +210,9 @@ static class Program
 
         Run("schtasks.exe", string.Format("/Delete /F /TN \"{0}\"", TaskName));
         foreach (string lnk in ShortcutPaths()) if (File.Exists(lnk)) File.Delete(lnk);
+        // The one Firefox itself made on first start in versions before Fjord turned that off (Fjord.cfg)
+        string privateLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "Fjord Private Browsing.lnk");
+        if (File.Exists(privateLnk)) File.Delete(privateLnk);
         Registry.CurrentUser.DeleteSubKeyTree(UninstallKey, false);
         using (var key = Registry.CurrentUser.OpenSubKey(SkeletonKey, true))
             if (key != null)
