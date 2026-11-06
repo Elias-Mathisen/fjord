@@ -1,4 +1,11 @@
 {
+  "1.0.8": [
+    "Sync with your iPhone: scan a QR code in Settings with Fjord for iPhone, and your history, bookmarks and open tabs go both ways over your home Wi-Fi. Nothing goes through the internet.",
+    "Spaces: separate sets of tabs like Work and Personal, each with its own colour. The button at the start of the tabs switches between them.",
+    "Privacy report in Settings: what Fjord blocked each day this week, which companies tried to track you and on which sites. It stays on this computer.",
+    "24 new photos on the new tab.",
+    "Windows: no more stray “Fjord Private Browsing” shortcut in the Start menu."
+  ],
   "1.0.7": [
     "Mac: Fjord.dmg opens a small window that shows you to drag Fjord into Applications.",
     "Mac: Fjord starts with its own icon instead of Firefox's, and macOS no longer warns that Fjord tried to read another app's data."
