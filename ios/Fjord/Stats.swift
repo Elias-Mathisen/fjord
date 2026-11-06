@@ -1,9 +1,9 @@
 // The new tab's tracker stats: addresses pages tried to load (PageScripts.watcher) that are on Fjord's tracker list
 // (tracker-companies.json, made by tools/prepare.py from the desktop's src/fjord/trackers.sys.mjs), counted when the block
 // lists stopped them. Kept on this device only, a day at a time for the new tab's week and the privacy report (five
-// weeks). Which sites the companies were on is a kind of history, so it isn't kept with Forget everything on, and is
-// cleared with history. Time and data saved use the desktop's estimates: about 50 ms and 40 KB for every tracker that
-// didn't load.
+// weeks). Which sites the companies were on is a kind of history, so it's only kept while history is (Keep history on,
+// Forget everything off), and is cleared with history. Time and data saved use the desktop's estimates: about 50 ms
+// and 40 KB for every tracker that didn't load.
 import Foundation
 
 @MainActor
@@ -59,7 +59,7 @@ final class TrackerStats: ObservableObject {
     func record(_ hosts: [String], on page: String) {
         let site = Privacy.baseDomain(page)
         let today = Self.day(.now)
-        let keepSite = !UserDefaults.standard.bool(forKey: Setting.ghost)
+        let keepSite = History.keeping
         var added = 0
         for host in hosts where Privacy.baseDomain(host) != site {
             guard let owner = company(for: host), owner != company(for: page) else { continue } // a company's own sites

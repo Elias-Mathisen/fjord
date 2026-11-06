@@ -53,9 +53,9 @@ final class Browser: ObservableObject {
     }
 
     // Text typed in the address bar: an address, or a search with the chosen engine
-    func go(_ text: String) {
+    func go(_ text: String) { open(Self.url(for: text)) }
+    func open(_ url: URL) {
         guard let tab = current else { return }
-        let url = Self.url(for: text)
         whenReady { tab.load(url) }
     }
     static func url(for text: String) -> URL {
@@ -241,6 +241,7 @@ final class Tab: NSObject, ObservableObject, Identifiable {
         guard let host else { return }
         let site = Shields.site(host)
         TrackerStats.shared.forgetSites(Privacy.baseDomain(host)) // and the privacy report's counts for it
+        History.shared.forget(site: site)
         let store = webView.configuration.websiteDataStore
         let types = WKWebsiteDataStore.allWebsiteDataTypes()
         store.fetchDataRecords(ofTypes: types) { records in
@@ -319,6 +320,7 @@ extension Tab: WKNavigationDelegate, WKUIDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        if let url = webView.url, webView.configuration.websiteDataStore.isPersistent { History.shared.add(url, title: webView.title ?? "") }
         favicon = nil
         loadFavicon()
         barCollapsed = false

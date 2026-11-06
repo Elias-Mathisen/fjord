@@ -14,10 +14,13 @@ enum Setting {
     static let youtube = "privateYouTubePlayer"
     static let hidden = "hiddenParts"           // [site: [selector]]
     static let unlockScroll = "hiddenUnlocksScroll" // sites where a hidden part covered the page
+    static let history = "keepHistory"          // the sites you've been to, for the address bar's suggestions
+    static let setupDone = "setupDone"          // the first-time setup was finished or skipped
 
     static func register() {
         UserDefaults.standard.register(defaults: [blocking: true, redirects: true, lookalikes: true, ghost: false,
-                                                  engine: "DuckDuckGo", appLock: false, randomise: true, youtube: false])
+                                                  engine: "DuckDuckGo", appLock: false, randomise: true, youtube: false,
+                                                  history: true])
     }
 }
 

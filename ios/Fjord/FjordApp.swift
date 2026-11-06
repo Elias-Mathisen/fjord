@@ -11,6 +11,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         #if DEBUG
         Privacy.selfCheck()
+        History.selfCheck()
         #endif
         Cast.shared.setUp()
         return true
@@ -46,13 +47,26 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 }
 
 struct RootView: View {
+    @EnvironmentObject var browser: Browser
     @EnvironmentObject var lock: AppLock
+    @AppStorage(Setting.setupDone) private var setupDone = false
     var body: some View {
         ZStack {
             BrowserView()
-            if lock.locked { LockView().transition(.opacity) }
+            if !setupDone { SetupView().transition(.opacity).zIndex(1) }
+            if lock.locked { LockView().transition(.opacity).zIndex(2) }
         }
         .animation(.easeInOut(duration: 0.2), value: lock.locked)
+        .animation(.easeInOut(duration: 0.3), value: setupDone)
+        .onChange(of: setupDone) { _, done in
+            guard done, let tab = browser.current else { return }
+            StatusBar.style = StatusBar.style(for: tab)
+            // The first tab opened before setup; with Forget everything picked, it's swapped for one that keeps nothing
+            if UserDefaults.standard.bool(forKey: Setting.ghost), tab.isNewTab, tab.webView.configuration.websiteDataStore.isPersistent {
+                browser.newTab()
+                browser.close(tab)
+            }
+        }
         .tint(.primary)
     }
 }

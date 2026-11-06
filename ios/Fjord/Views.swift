@@ -13,6 +13,22 @@ extension Animation {
     static func fjord(reduced: Bool) -> Animation { reduced ? .easeInOut(duration: 0.18) : .fjord }
 }
 
+// iOS 26's Liquid Glass where there is one, a frosted material before it
+extension View {
+    @ViewBuilder func fjordGlass(_ shape: some Shape) -> some View {
+        if #available(iOS 26, *) {
+            // tinted a little with the background, so text on busy pages behind it doesn't show through
+            glassEffect(.regular.tint(Color(.systemBackground).opacity(0.5)), in: shape)
+        } else {
+            background(.regularMaterial, in: shape).shadow(color: .black.opacity(0.14), radius: 12, y: 4)
+        }
+    }
+}
+private var hasGlass: Bool {
+    if #available(iOS 26, *) { return true }
+    return false
+}
+
 extension StatusBar {
     // Light text over the photo new tab and dark sites, dark text over light ones
     static func style(for tab: Tab) -> UIStatusBarStyle {
@@ -112,12 +128,15 @@ struct WebView: UIViewRepresentable {
 }
 
 // ---------- Address bar and toolbar ----------
-// While you scroll down the bar shrinks to the site's name, like Safari's; scrolling up or a tap brings it back
+// While you scroll down the bar shrinks to the site's name, like Safari's; scrolling up or a tap brings it back.
+// While you type, sites from your history (or well-known ones) are listed above it, and the best one's name is
+// finished in grey after what you typed: Go opens it, typing on narrows it, deleting drops it.
 struct BottomBar: View {
     @EnvironmentObject var browser: Browser
     @ObservedObject var tab: Tab
     @Binding var sheet: BrowserView.Sheet?
     @State private var text = ""
+    @State private var completion: String?
     @FocusState private var editing: Bool
     @AppStorage(Setting.blocking) private var blocking = true
     @ObservedObject private var airplay = AirPlayRoutes.shared
@@ -129,9 +148,24 @@ struct BottomBar: View {
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
     private var collapsed: Bool { tab.barCollapsed && !editing && !tab.isNewTab }
+    // Glass shows the page through it, so its text follows the page: light over dark sites and the photo new tab,
+    // dark over light ones, like the status bar
+    private var barScheme: ColorScheme? {
+        guard hasGlass else { return nil }
+        switch StatusBar.style(for: tab) {
+        case .lightContent: return .dark
+        case .darkContent: return .light
+        default: return nil
+        }
+    }
 
     // One shape throughout: the address field, which shrinks to a small rounded square around the site's name and
     // grows back from it, while the toolbar and the bar's own background fade and slide away under it
+    private var suggestions: [History.Suggestion] {
+        guard editing, text != tab.url?.absoluteString else { return [] }
+        return History.shared.suggestions(for: text)
+    }
+
     var body: some View {
         VStack(spacing: 10) {
             field
@@ -144,14 +178,54 @@ struct BottomBar: View {
         .padding(.bottom, collapsed ? 2 : 4)
         .frame(maxWidth: .infinity)
         .background {
-            Rectangle().fill(.bar).ignoresSafeArea()
-                .overlay(alignment: .top) { ProgressLine(tab: tab) }
-                .opacity(collapsed ? 0 : 1)
+            // With glass the field and toolbar float on their own over the page; before it, they sit on a bar
+            Group {
+                if !hasGlass {
+                    Rectangle().fill(.bar).overlay(alignment: .top) { ProgressLine(tab: tab) }
+                } else if !tab.isNewTab {
+                    // A soft fade into the page's own light or dark under the glass, so busy pages don't show through
+                    LinearGradient(colors: [Color(.systemBackground).opacity(0), Color(.systemBackground).opacity(0.7), Color(.systemBackground).opacity(0.9)],
+                                   startPoint: .top, endPoint: .bottom)
+                        .padding(.top, -28)
+                }
+            }
+            .ignoresSafeArea()
+            .opacity(collapsed ? 0 : 1)
         }
+        // The sites for what's typed float just above the bar, over the page, rather than pushing the bar up
+        .overlay(alignment: .top) {
+            let suggestions = self.suggestions
+            if !suggestions.isEmpty {
+                SuggestionList(suggestions: suggestions) { open($0.url) }
+                    .padding(.horizontal, 14)
+                    .alignmentGuide(.top) { $0[.bottom] + 10 }
+                    .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .bottom)))
+            }
+        }
+        .modifier(BarScheme(scheme: barScheme))
         .animation(.fjord(reduced: reduceMotion), value: collapsed)
         .onAppear { text = shownAddress }
         .onChange(of: tab.url) { if !editing { text = shownAddress } }
         .onChange(of: editing) { _, now in text = now ? (tab.url?.absoluteString ?? "") : shownAddress }
+        .onChange(of: text) { old, new in
+            completion = editing && new.count > old.count && new.hasPrefix(old) ? History.shared.completion(for: new) : nil
+        }
+        .animation(.easeOut(duration: 0.15), value: suggestions.map(\.id))
+        #if DEBUG
+        .task { // Simulator tests: -FjordType <text> types it into the address bar
+            let args = ProcessInfo.processInfo.arguments
+            guard let i = args.firstIndex(of: "-FjordType"), i + 1 < args.count else { return }
+            try? await Task.sleep(for: .seconds(3))
+            editing = true
+            try? await Task.sleep(for: .seconds(1))
+            text = args[i + 1]
+        }
+        #endif
+    }
+
+    private func open(_ url: URL) {
+        browser.open(url)
+        editing = false
     }
 
     private var field: some View {
@@ -174,13 +248,9 @@ struct BottomBar: View {
             }
         }
         .frame(maxWidth: collapsed ? nil : .infinity)
-        .background {
-            RoundedRectangle(cornerRadius: collapsed ? 11 : 24, style: .continuous)
-                .fill(collapsed ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Color(.secondarySystemBackground)))
-                .shadow(color: .black.opacity(collapsed ? 0.14 : 0), radius: 10, y: 3)
-        }
+        .modifier(FieldBackground(collapsed: collapsed))
         .overlay(alignment: .bottom) {
-            if collapsed { ProgressLine(tab: tab).padding(.horizontal, 10) }
+            if collapsed || hasGlass { ProgressLine(tab: tab).padding(.horizontal, collapsed ? 10 : 22) }
         }
     }
 
@@ -200,9 +270,18 @@ struct BottomBar: View {
                 .autocorrectionDisabled()
                 .submitLabel(.go)
                 .multilineTextAlignment(editing ? .leading : .center)
+                .overlay(alignment: .leading) {
+                    if editing, let completion, completion.count > text.count {
+                        (Text(text).foregroundStyle(Color.clear) + Text(completion.dropFirst(text.count)).foregroundStyle(Color.secondary))
+                            .lineLimit(1)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .clipped()
                 .onSubmit {
                     guard !text.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                    browser.go(text)
+                    browser.go(completion ?? text)
                     editing = false
                 }
             if tab.isLoading {
@@ -256,8 +335,78 @@ struct BottomBar: View {
             Button { sheet = .settings } label: { Image(systemName: "gearshape") }.accessibilityLabel("Fjord settings")
         }
         .font(.system(size: 19))
-        .padding(.horizontal, 10)
+        .padding(.horizontal, hasGlass ? 22 : 10)
+        .padding(.vertical, hasGlass ? 12 : 0)
+        .modifier(ToolbarGlass())
         .animation(.fjord, value: browser.tabs.count)
+    }
+}
+
+// The address field: a glass capsule, or before iOS 26 a grey field on the bar that turns frosted when it shrinks
+struct FieldBackground: ViewModifier {
+    let collapsed: Bool
+    func body(content: Content) -> some View {
+        if hasGlass {
+            content.fjordGlass(Capsule())
+        } else {
+            content.background {
+                RoundedRectangle(cornerRadius: collapsed ? 11 : 24, style: .continuous)
+                    .fill(collapsed ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Color(.secondarySystemBackground)))
+                    .shadow(color: .black.opacity(collapsed ? 0.14 : 0), radius: 10, y: 3)
+            }
+        }
+    }
+}
+
+struct BarScheme: ViewModifier {
+    let scheme: ColorScheme?
+    func body(content: Content) -> some View {
+        if let scheme { content.environment(\.colorScheme, scheme) } else { content }
+    }
+}
+
+struct ToolbarGlass: ViewModifier {
+    func body(content: Content) -> some View {
+        if hasGlass { content.fjordGlass(Capsule()) } else { content }
+    }
+}
+
+// The sites that match what's typed, best first, each a row you tap to open
+struct SuggestionList: View {
+    let suggestions: [History.Suggestion]
+    let open: (History.Suggestion) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(suggestions) { s in
+                Button { open(s) } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: s.visited ? "clock" : "globe")
+                            .font(.subheadline).foregroundStyle(.secondary).frame(width: 22)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(s.title.isEmpty ? s.address : s.title).lineLimit(1)
+                            if !s.title.isEmpty { Text(s.address).font(.footnote).foregroundStyle(.secondary).lineLimit(1) }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 48)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(SuggestionRow())
+                .accessibilityLabel(s.title.isEmpty ? s.address : "\(s.title), \(s.address)")
+            }
+        }
+        .padding(.vertical, 4)
+        .fjordGlass(RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+}
+
+struct SuggestionRow: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(Color.primary.opacity(configuration.isPressed ? 0.08 : 0), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(.horizontal, 4)
     }
 }
 
@@ -365,7 +514,7 @@ struct NewTabView: View {
                         .foregroundStyle(.white.opacity(0.8))
                         .padding(.top, 14)
                     }
-                    Spacer().frame(height: 130) // the bottom bar
+                    Spacer().frame(height: hasGlass ? 165 : 130) // the bottom bar, which the photo shows through with glass
                 }
             }
         }
@@ -828,6 +977,8 @@ struct SettingsView: View {
     @AppStorage(Setting.appLock) private var appLock = false
     @AppStorage(Setting.randomise) private var randomise = true
     @AppStorage(Setting.youtube) private var youtube = false
+    @AppStorage(Setting.history) private var history = true
+    @AppStorage(Setting.setupDone) private var setupDone = false
     @State private var sitesOff = Shields.sitesOff
     @State private var hiddenSites = Hidden.sites
     @State private var confirmClear = false
@@ -835,16 +986,7 @@ struct SettingsView: View {
     @State private var safari: [String: Bool] = [:]
     @Environment(\.scenePhase) private var phase
 
-    private var unlockMethod: String {
-        let context = LAContext()
-        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
-        switch context.biometryType {
-        case .faceID: return "Face ID"
-        case .touchID: return "Touch ID"
-        case .opticID: return "Optic ID"
-        default: return "your passcode"
-        }
-    }
+    private var unlockMethod: String { AppLock.method }
 
     var body: some View {
         NavigationStack {
@@ -879,10 +1021,12 @@ struct SettingsView: View {
                     }
                 }
                 Section {
+                    Toggle("Keep history", isOn: $history)
+                        .onChange(of: history) { _, keep in if !keep { History.shared.forget(); TrackerStats.shared.forgetSites() } }
                     Toggle("Forget everything", isOn: $ghost)
                     Button("Clear history, cookies and site data", role: .destructive) { confirmClear = true }
                 } header: { Text("Privacy") } footer: {
-                    Text(cleared ? "Cleared." : "With Forget everything on, new tabs keep no cookies, history or site data: you'll be signed out of sites.")
+                    Text(cleared ? "Cleared." : "History is the sites you've been to, so the address bar can suggest them as you type. With Forget everything on, new tabs keep no cookies, history or site data: you'll be signed out of sites.")
                 }
                 Section {
                     Toggle("Lock with \(unlockMethod)", isOn: $appLock)
@@ -909,6 +1053,10 @@ struct SettingsView: View {
                 }
                 Section {
                     LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
+                    Button("Run setup again") {
+                        dismiss()
+                        Task { try? await Task.sleep(for: .milliseconds(400)); setupDone = false } // once the sheet is down
+                    }
                 } header: { Text("About") } footer: {
                     Text("Fjord on iPhone and iPad runs on WebKit, like every browser on iOS. There's no Fjord account and no usage data: settings and history stay on this device.")
                 }
@@ -919,6 +1067,7 @@ struct SettingsView: View {
             .confirmationDialog("Clear history, cookies and site data?", isPresented: $confirmClear, titleVisibility: .visible) {
                 Button("Clear", role: .destructive) {
                     TrackerStats.shared.forgetSites()
+                    History.shared.forget()
                     WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {
                         cleared = true
                     }
@@ -935,6 +1084,17 @@ final class AppLock: ObservableObject {
     private var asking = false
 
     init() { locked = UserDefaults.standard.bool(forKey: Setting.appLock) }
+
+    static var method: String {
+        let context = LAContext()
+        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
+        switch context.biometryType {
+        case .faceID: return "Face ID"
+        case .touchID: return "Touch ID"
+        case .opticID: return "Optic ID"
+        default: return "your passcode"
+        }
+    }
 
     func phaseChanged(_ phase: ScenePhase) {
         let on = UserDefaults.standard.bool(forKey: Setting.appLock)
