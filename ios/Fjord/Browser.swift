@@ -240,6 +240,7 @@ final class Tab: NSObject, ObservableObject, Identifiable {
     func forget(_ done: @escaping @MainActor () -> Void) {
         guard let host else { return }
         let site = Shields.site(host)
+        TrackerStats.shared.forgetSites(Privacy.baseDomain(host)) // and the privacy report's counts for it
         let store = webView.configuration.websiteDataStore
         let types = WKWebsiteDataStore.allWebsiteDataTypes()
         store.fetchDataRecords(ofTypes: types) { records in

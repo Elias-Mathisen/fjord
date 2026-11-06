@@ -25,7 +25,7 @@ struct BrowserView: View {
     @EnvironmentObject var browser: Browser
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var sheet: Sheet?
-    enum Sheet: String, Identifiable { case shields, settings; var id: String { rawValue } }
+    enum Sheet: String, Identifiable { case shields, settings, report; var id: String { rawValue } }
 
     var body: some View {
         ZStack {
@@ -47,6 +47,7 @@ struct BrowserView: View {
             switch which {
             case .shields: if let tab = browser.current { ShieldsSheet(tab: tab).presentationDetents([.medium]) }
             case .settings: SettingsView()
+            case .report: ReportSheet()
             }
         }
         .onChange(of: browser.showingTabs) { _, showing in
@@ -75,7 +76,7 @@ struct PageView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            if tab.isNewTab { NewTabView().transition(.opacity) }
+            if tab.isNewTab { NewTabView(sheet: $sheet).transition(.opacity) }
             // The page runs under the bottom bar, as in Safari, so shrinking the bar shows more of it
             ZStack {
                 WebView(webView: tab.webView)
@@ -326,6 +327,7 @@ struct Photo: Decodable {
 }
 
 struct NewTabView: View {
+    @Binding var sheet: BrowserView.Sheet?
     @State private var photo = Photo.all.randomElement()
 
     var body: some View {
@@ -351,7 +353,10 @@ struct NewTabView: View {
                     .foregroundStyle(.white)
                     .shadow(color: .black.opacity(0.25), radius: 12)
                     .padding(.top, geo.size.height * 0.14)
-                    StatsCard().padding(.top, 26).padding(.horizontal, 24)
+                    Button { sheet = .report } label: { StatsCard() }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Opens the privacy report")
+                        .padding(.top, 26).padding(.horizontal, 24)
                     Spacer()
                     if let photo {
                         Link(destination: URL(string: photo.page) ?? URL(string: "https://unsplash.com")!) {
@@ -428,6 +433,140 @@ struct WeekBars: View {
         }
         .frame(height: 42, alignment: .bottom)
         .accessibilityLabel("This week: \(week.map { "\($0.count)" }.joined(separator: ", ")) trackers a day")
+    }
+}
+
+// ---------- Privacy report: a week at a time, the companies that tried to track you and on which sites ----------
+struct ReportSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            PrivacyReportView()
+                .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() }.fontWeight(.semibold) } }
+        }
+    }
+}
+
+struct PrivacyReportView: View {
+    @ObservedObject private var stats = TrackerStats.shared
+    @AppStorage(Setting.ghost) private var ghost = false
+    @State private var weeksAgo = 0
+    @State private var showAll: Set<String> = []
+    private static let shown = 8
+
+    var body: some View {
+        let report = stats.report(weeksAgo: weeksAgo)
+        let first = report.days.first!.date, last = report.days.last!.date
+        let start = stats.firstDay.map { Calendar.current.startOfDay(for: $0) }
+        let counted = start.map { $0 <= last } ?? false
+        List {
+            Section {
+                VStack(spacing: 18) {
+                    HStack {
+                        step("chevron.left", "The week before", enabled: weeksAgo + 1 < TrackerStats.weeks && (start.map { $0 < Calendar.current.startOfDay(for: first) } ?? false)) { weeksAgo += 1 }
+                        Spacer()
+                        VStack(spacing: 1) {
+                            Text(weeksAgo == 0 ? "This week" : weeksAgo == 1 ? "Last week" : "\(weeksAgo) weeks ago").font(.headline)
+                            Text("\(first.formatted(.dateTime.day().month())) – \(last.formatted(.dateTime.day().month()))")
+                                .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
+                        }
+                        .accessibilityElement(children: .combine)
+                        Spacer()
+                        step("chevron.right", "The week after", enabled: weeksAgo > 0) { weeksAgo -= 1 }
+                    }
+                    if counted {
+                        VStack(spacing: 2) {
+                            Text(report.total.formatted()).font(.system(size: 44, weight: .semibold)).monospacedDigit()
+                                .contentTransition(.numericText())
+                            Text("trackers stopped").font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                        ReportBars(days: report.days)
+                    } else {
+                        Text("Fjord hadn't started counting yet.").foregroundStyle(.secondary).padding(.bottom, 6)
+                    }
+                }
+                .padding(.vertical, 8)
+            }
+            if counted {
+                Section {
+                    rows(report.companies, key: "companies") { "on \(names($0, one: "site", many: "sites"))" }
+                } header: { Text("Companies that tried to track you") } footer: {
+                    Text("How many times pages tried to send them something.")
+                }
+                Section("Sites with the most trackers") {
+                    if report.sites.isEmpty && !report.companies.isEmpty {
+                        Text(ghost ? "Fjord doesn't keep which sites while Forget everything is on." : "Which sites they were on was cleared with your history.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        rows(report.sites, key: "sites") { names($0, one: "company", many: "companies") }
+                    }
+                }
+            }
+            Section {
+                Button("Forget all sites", role: .destructive) { stats.forgetSites() }
+            } footer: {
+                Text("Counted on this device and never sent anywhere. With Forget everything on, Fjord doesn't keep which sites, and clearing your history clears them.")
+            }
+        }
+        .navigationTitle("Privacy report")
+        .navigationBarTitleDisplayMode(.inline)
+        .animation(.fjord, value: weeksAgo)
+        .onChange(of: weeksAgo) { showAll = [] }
+    }
+
+    private func step(_ symbol: String, _ label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) { Image(systemName: symbol).font(.body.weight(.semibold)).frame(width: 44, height: 44) }
+            .buttonStyle(.borderless)
+            .disabled(!enabled)
+            .accessibilityLabel(label)
+    }
+
+    @ViewBuilder
+    private func rows(_ list: [TrackerStats.Entry], key: String, sub: @escaping ([String]) -> String) -> some View {
+        if list.isEmpty {
+            Text("None this week.").foregroundStyle(.secondary)
+        } else {
+            ForEach(showAll.contains(key) ? list : Array(list.prefix(Self.shown))) { e in
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(e.name)
+                        if !e.with.isEmpty { Text(sub(e.with)).font(.footnote).foregroundStyle(.secondary) }
+                    }
+                    Spacer()
+                    Text(e.count.formatted()).monospacedDigit().foregroundStyle(.secondary)
+                }
+                .accessibilityElement(children: .combine)
+            }
+            if list.count > Self.shown && !showAll.contains(key) {
+                Button("Show all \(list.count)") { showAll.insert(key) }
+            }
+        }
+    }
+
+    private func names(_ list: [String], one: String, many: String) -> String {
+        let more = list.count - 2
+        return (list.count <= 3 ? list : Array(list.prefix(2)) + ["\(more) other \(more == 1 ? one : many)"]).formatted(.list(type: .and))
+    }
+}
+
+struct ReportBars: View {
+    let days: [(date: Date, count: Int)]
+    var body: some View {
+        let most = max(1, days.map(\.count).max() ?? 1)
+        HStack(alignment: .bottom, spacing: 10) {
+            ForEach(Array(days.enumerated()), id: \.offset) { _, day in
+                VStack(spacing: 6) {
+                    RoundedRectangle(cornerRadius: 5).fill(.primary.opacity(0.8))
+                        .frame(height: max(3, 80 * CGFloat(day.count) / CGFloat(most)))
+                    Text(day.date, format: .dateTime.weekday(.abbreviated)).font(.caption2.weight(.medium)).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .frame(height: 104, alignment: .bottom)
+        .accessibilityElement()
+        .accessibilityLabel(days.map { "\($0.date.formatted(.dateTime.weekday(.wide))): \($0.count)" }.joined(separator: ", "))
     }
 }
 
@@ -711,6 +850,7 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
+                    NavigationLink("Privacy report") { PrivacyReportView() }
                     Toggle("Block ads and trackers", isOn: $blocking)
                     Toggle("Warn about fake sites", isOn: $lookalikes)
                     Toggle("Skip tracking redirects", isOn: $redirects)
@@ -778,6 +918,7 @@ struct SettingsView: View {
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() }.fontWeight(.semibold) } }
             .confirmationDialog("Clear history, cookies and site data?", isPresented: $confirmClear, titleVisibility: .visible) {
                 Button("Clear", role: .destructive) {
+                    TrackerStats.shared.forgetSites()
                     WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {
                         cleared = true
                     }

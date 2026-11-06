@@ -1,7 +1,9 @@
 // Fjord's privacy watch, one per session (an ES module is loaded once):
 //  - which tracking companies each page contacts, for Shields' privacy label
-//  - per-day counts (blocked, and contacts per company) for the new tab's weekly summary. Only counts are kept,
-//    never which sites you visited, and private windows aren't recorded.
+//  - per-day counts (blocked, contacts per company, and per site) for the new tab's weekly summary and the privacy
+//    report. Kept on this computer only, and private windows aren't recorded. Which sites the companies were on is a
+//    kind of history, so it follows Firefox's: not kept with history off, not saved when history is cleared on
+//    close (Ghost), and cleared along with history.
 //  - the lookalike-site check: stops pages whose name copies a popular site (paypa1.com) before they load
 import { TRACKERS } from "resource://fjord/trackers.sys.mjs";
 import { setInterval, clearInterval } from "resource://gre/modules/Timer.sys.mjs";
@@ -39,21 +41,39 @@ export function pageCompanies(browserId) {
 // ---------- Per day ----------
 const FILE = PathUtils.join(PathUtils.profileDir, "fjord-week.json");
 const KEEP_DAYS = 35;
-let days = {}; // "2026-11-03" -> { blocked, total, companies: { Google: 12 } }
+let days = {}; // "2026-11-03" -> { blocked, total, companies: { Google: 12 }, sites: { "bbc.co.uk": { Google: 3 } } }
 let dirty = false;
 const today = () => new Date().toLocaleDateString("sv"); // yyyy-mm-dd in local time
 const day = () => (days[today()] ??= { blocked: 0, companies: {} });
 const ready = IOUtils.readJSON(FILE).then(d => { days = d.days ?? {}; }, () => {});
+
+const pref = (name, fallback) => Services.prefs.getBoolPref(name, fallback);
+const keepSites = () => pref("places.history.enabled", true);
+const saveSites = () => !(pref("privacy.sanitize.sanitizeOnShutdown", false) && pref("privacy.clearOnShutdown_v2.browsingHistoryAndDownloads", false));
 
 function save() {
   if (!dirty) return;
   dirty = false;
   const keep = Object.keys(days).sort().slice(-KEEP_DAYS);
   days = Object.fromEntries(keep.map(k => [k, days[k]]));
-  IOUtils.writeJSON(FILE, { days }, { tmpPath: FILE + ".tmp" }).catch(console.error);
+  const out = saveSites() ? days : Object.fromEntries(keep.map(k => [k, { ...days[k], sites: undefined }]));
+  IOUtils.writeJSON(FILE, { days: out }, { tmpPath: FILE + ".tmp" }).catch(console.error);
 }
 const saveTimer = setInterval(save, 60000);
 Services.obs.addObserver(() => { clearInterval(saveTimer); save(); }, "quit-application-granted");
+
+// Clearing history (all of it or a time range) forgets every site, Shields' "Forget this site now" just that one; the
+// per-company and blocked counts stay
+export async function forgetSites(site) {
+  await ready;
+  for (const d of Object.values(days)) {
+    if (site) delete d.sites?.[site];
+    else delete d.sites;
+  }
+  dirty = true;
+  save();
+}
+Services.obs.addObserver(() => forgetSites().catch(console.error), "browser:purge-session-history");
 
 // Fed the running "blocked since install" total (Firefox's tracker blocking + uBlock); a day's count is how much
 // it grew that day.
@@ -84,6 +104,39 @@ export async function weekSummary() {
     blocked: list.reduce((sum, d) => sum + d.blocked, 0),
     days: list,
     companies: Object.entries(companies).sort((a, b) => b[1] - a[1]).slice(0, 5),
+  };
+}
+
+// The privacy report for one week: the 7 days ending `weeksAgo` weeks before today. Companies with the sites they
+// were on, and sites with the companies on them, most first.
+export async function weekReport(weeksAgo = 0) {
+  await ready;
+  const list = [], companies = new Map(), sites = new Map();
+  const add = (map, key, n, other) => {
+    const e = map.get(key) ?? map.set(key, { name: key, count: 0, with: new Map() }).get(key);
+    e.count += n;
+    if (other) e.with.set(other, (e.with.get(other) ?? 0) + n);
+  };
+  for (let i = 7 * weeksAgo + 6; i >= 7 * weeksAgo; i--) {
+    const date = new Date(Date.now() - i * 864e5);
+    const d = days[date.toLocaleDateString("sv")];
+    list.push({ date: date.toLocaleDateString("sv"), blocked: d?.blocked ?? 0 });
+    for (const [name, n] of Object.entries(d?.companies ?? {})) add(companies, name, n);
+    for (const [site, byCompany] of Object.entries(d?.sites ?? {})) {
+      for (const [name, n] of Object.entries(byCompany)) {
+        add(sites, site, n, name);
+        companies.get(name)?.with.set(site, (companies.get(name).with.get(site) ?? 0) + n);
+      }
+    }
+  }
+  const sorted = map => [...map.values()].sort((a, b) => b.count - a.count)
+    .map(e => ({ ...e, with: [...e.with].sort((a, b) => b[1] - a[1]).map(([k]) => k) }));
+  return {
+    since: Object.keys(days).sort()[0],
+    days: list,
+    blocked: list.reduce((sum, d) => sum + d.blocked, 0),
+    companies: sorted(companies),
+    sites: sorted(sites),
   };
 }
 
@@ -266,8 +319,12 @@ function onRequest(subject) {
   if (!company || company === page.owner) return;
   page.companies.set(company, (page.companies.get(company) ?? 0) + 1);
   if (!info.originAttributes.privateBrowsingId) {
-    const counts = day().companies;
-    counts[company] = (counts[company] ?? 0) + 1;
+    const d = day();
+    d.companies[company] = (d.companies[company] ?? 0) + 1;
+    if (keepSites()) {
+      const site = ((d.sites ??= {})[page.site] ??= {});
+      site[company] = (site[company] ?? 0) + 1;
+    }
     dirty = true;
   }
 }

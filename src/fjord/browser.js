@@ -88,7 +88,10 @@
     onLocationChange(browser, webProgress, request, location) {
       if (!webProgress.isTopLevel) return;
       if (location.spec === FJORD.newtab || location.spec.startsWith(oldNewtab)) return fixNewtab(browser);
-      if (location.spec.startsWith(FJORD.newtab) && location.ref === "customize" && browser === gBrowser.selectedBrowser) showSettings("newtab");
+      if (location.spec.startsWith(FJORD.newtab) && browser === gBrowser.selectedBrowser) {
+        if (location.ref === "customize") showSettings("newtab");
+        if (location.ref === "report") showSettings("report"); // the new tab's week
+      }
       browser.parentElement.querySelector(".ns-guard")?.remove(); // a lookalike warning goes once the tab goes elsewhere
     },
   });
@@ -783,7 +786,7 @@
     sections: {}, // settings sections from the feature scripts: { key: { label, desc, keys, after, render(ctx) } }
   };
   Services.scriptloader.loadSubScript("resource://fjord/shields.js", window);
-  for (const f of ["memory", "mist", "proveit", "permissions", "design", "workspaces", "proxy", "applock", "youtube", "hide", "commandbar", "glance"]) {
+  for (const f of ["memory", "mist", "proveit", "report", "permissions", "design", "workspaces", "proxy", "applock", "youtube", "hide", "commandbar", "glance"]) {
     try {
       Services.scriptloader.loadSubScript(`resource://fjord/features/${f}.js`, window);
     } catch (e) {

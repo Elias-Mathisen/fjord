@@ -162,6 +162,7 @@
     const F = Ci.nsIClearDataService;
     const failed = await new Promise(done => Services.clearData.deleteDataFromSite(domain, {}, true,
       F.CLEAR_COOKIES_AND_SITE_DATA | F.CLEAR_ALL_CACHES | F.CLEAR_HISTORY, done));
+    await privacy.forgetSites(domain); // and the privacy report's counts for it
     browser.fixupAndLoadURIString(FJORD.newtab, {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY,
@@ -211,9 +212,11 @@
         kids.push(h("p", { class: "ns-quiet" }, "Private window: history and cookies are deleted when you close it."));
       }
     }
-    const settings = h("button", { class: "ns-link-row" }, "Fjord settings");
-    settings.addEventListener("click", () => { panel.hidePopup(); Fjord.showSettings("privacy"); });
-    kids.push(settings);
+    for (const [text, section] of [["Privacy report", "report"], ["Fjord settings", "privacy"]]) {
+      const link = h("button", { class: "ns-link-row" }, text);
+      link.addEventListener("click", () => { panel.hidePopup(); Fjord.showSettings(section); });
+      kids.push(link);
+    }
     panel.replaceChildren(h("div", { class: "ns-shields" }, ...kids));
   }
 

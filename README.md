@@ -19,6 +19,8 @@ follow every Firefox security update the day it ships.
 - **Private YouTube player** (YouTube's privacy-enhanced player, no recommendations or watch history) and
   **Hide this** for cookie walls, sidebars and pop-ups
 - **Command bar** (Ctrl+K) for tabs, bookmarks, history and Fjord's actions, and **link preview** (Shift-click)
+- **Privacy report**: week by week, which companies tried to track you and on which sites, counted on your computer
+  and never sent anywhere (also on iPhone)
 - **Fjord's connections**: a live list of every connection Fjord itself makes
 - Sidebar apps (Spotify, WhatsApp…), Workspaces, Memory saver, design tools (colour picker, font finder, asset saver,
   full-page screenshots)

@@ -45,8 +45,10 @@
   .stat span { font-size: 12.5px; color: rgb(255 255 255 / 0.8); }
 
   /* This week, bottom right, no box: the total, then a bar per day with its name under it */
-  .week { position: fixed; right: 28px; bottom: 20px; width: 250px; display: grid; gap: 10px;
-    font-size: 13px; color: rgb(255 255 255 / 0.8); text-shadow: 0 1px 12px rgb(0 0 0 / 0.55); }
+  .week { position: fixed; right: 28px; bottom: 20px; width: 250px; display: grid; gap: 10px; padding: 0; border: none;
+    background: none; font: inherit; font-size: 13px; text-align: start; cursor: pointer;
+    color: rgb(255 255 255 / 0.8); text-shadow: 0 1px 12px rgb(0 0 0 / 0.55); }
+  .week:focus-visible { outline: 2px solid #fff; outline-offset: 8px; border-radius: 6px; }
   .week-total b { font-size: 24px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; margin-inline-end: 6px; }
   .week-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 64px; }
   .week-bars .bar { display: grid; justify-items: center; align-content: end; gap: 6px; }
@@ -86,10 +88,10 @@
   <div id="time"></div>
   <div id="date"></div>
 </main>
-<section class="week" id="week" data-show="week" aria-label="This week" hidden>
+<button type="button" class="week" id="week" data-show="week" title="Open the privacy report" hidden>
   <div class="week-total"><b id="week-blocked"></b>blocked this week</div>
   <div class="week-bars" id="week-bars"></div>
-</section>
+</button>
 <a id="credit" target="_blank" rel="noopener noreferrer"></a>
 <script src="photos.js"></script>
 <script>
@@ -173,11 +175,14 @@ if (statsSrc && /^file:\/\/\/.+\/fjord-stats\.js$/.test(statsSrc)) {
   setInterval(() => { if (!document.hidden) load(); }, 5000);
 }
 
-// Customize: Fjord sees #customize on this page's address and opens its New tab settings
-document.getElementById("customize").addEventListener("click", () => {
-  location.hash = "customize";
-  setTimeout(() => history.replaceState(null, "", location.pathname + location.search), 300);
-});
+// Customize and the week: Fjord sees #customize or #report on this page's address and opens its New tab settings
+// or the privacy report
+for (const [id, hash] of [["customize", "customize"], ["week", "report"]]) {
+  document.getElementById(id).addEventListener("click", () => {
+    location.hash = hash;
+    setTimeout(() => history.replaceState(null, "", location.pathname + location.search), 300);
+  });
+}
 
 // Clock
 const timeFmt = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });

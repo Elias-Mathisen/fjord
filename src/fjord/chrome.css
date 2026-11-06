@@ -726,3 +726,22 @@
   /* Labels stay on one line; when the row is full, "Open … anyway" moves onto its own line instead */
   .ns-guard .ns-actions { flex-wrap: wrap; }
   .ns-guard .ns-actions button { white-space: nowrap; }
+
+  /* Privacy report (features/report.js): the week, its total, a bar per day, then companies and sites */
+  .ns-report-nav { display: flex; align-items: center; gap: 12px; margin-top: 22px; }
+  .ns-report-nav > span { flex: 1; display: grid; gap: 1px; text-align: center; }
+  .ns-report-nav > span span { color: var(--n-muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .ns-report-step { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid var(--n-line); border-radius: 9px; background: var(--n-raised); color: var(--n-text); }
+  .ns-report-step:hover:not(:disabled) { background: var(--n-hover); }
+  .ns-report-step:disabled { opacity: 0.35; }
+  .ns-report-step:focus-visible { outline: 2px solid var(--n-accent); outline-offset: 1px; }
+  .ns-report-next .ns-icon { transform: scaleX(-1); }
+  .ns-report-total { display: flex; align-items: center; gap: 14px; margin-top: 22px; }
+  .ns-report-total > b { font-size: 40px; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .ns-report-total > span { display: grid; gap: 2px; font-size: 14px; }
+  .ns-report-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; height: 96px; margin-top: 18px; }
+  .ns-report-bars > span { display: grid; justify-items: center; align-content: end; gap: 6px; color: var(--n-muted); font-size: 11.5px; }
+  .ns-report-bars i { width: 100%; border-radius: 5px; background: var(--n-text); opacity: 0.8; }
+  .ns-report-more { margin-top: 6px; }
+  .ns-report-empty { margin-top: 18px !important; }
+  .ns-overlay .ns-report-foot { margin-top: 28px; }
