@@ -103,6 +103,7 @@ final class Tab: NSObject, ObservableObject, Identifiable {
     // The bottom bar shrinks to the site's name while you scroll down, like Safari's
     @Published var barCollapsed = false
     @Published var snapshot: UIImage?
+    let photo = Photo.all.randomElement() // what the new tab shows, on the page and on its card
     @Published var favicon: UIImage?
     // You picked YouTube itself from the private player ("Watch on YouTube"); the tab stays on YouTube until it leaves
     var onYouTube = false

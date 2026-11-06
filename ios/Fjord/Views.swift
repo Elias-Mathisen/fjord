@@ -83,9 +83,9 @@ struct BrowserView: View {
     var body: some View {
         ZStack {
             if let tab = browser.current {
-                // The page steps back as the tabs come forward, and returns the same way
+                // The page fades out as the tabs come forward and back in at full size (shrinking it showed the
+                // black window around its edges)
                 PageView(tab: tab, sheet: $sheet).id(tab.id)
-                    .scaleEffect(browser.showingTabs && !reduceMotion ? 0.9 : 1)
                     .opacity(browser.showingTabs ? 0 : 1)
                     .allowsHitTesting(!browser.showingTabs)
             }
@@ -126,6 +126,10 @@ struct BrowserView: View {
                 try? await Task.sleep(for: .seconds(4))
                 switch ProcessInfo.processInfo.arguments[i + 1] {
                 case "tabs": browser.showTabs()
+                case "back-from-tabs": // tapping the open tab's card, 6 seconds after the tabs screen opens
+                    browser.showTabs()
+                    try? await Task.sleep(for: .seconds(6))
+                    if let tab = browser.current { browser.select(tab) }
                 case "newtab-from-tabs": // the + on the tabs screen, 6 seconds after it opens
                     browser.showTabs()
                     try? await Task.sleep(for: .seconds(6))
@@ -146,7 +150,7 @@ struct PageView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            if tab.isNewTab { NewTabView(sheet: $sheet).transition(.opacity) }
+            if tab.isNewTab { NewTabView(photo: tab.photo, sheet: $sheet).transition(.opacity) }
             // The page runs under the bottom bar, as in Safari, so shrinking the bar shows more of it
             ZStack {
                 WebView(webView: tab.webView)
@@ -552,6 +556,14 @@ struct Photo: Decodable {
               let data = try? Data(contentsOf: url) else { return [] }
         return (try? JSONDecoder().decode([Photo].self, from: data)) ?? []
     }()
+    // A small copy for the tabs screen's cards, made once per photo
+    @MainActor private static var thumbnails: [String: UIImage] = [:]
+    @MainActor var thumbnail: UIImage? {
+        if let made = Self.thumbnails[file] { return made }
+        let made = image?.preparingThumbnail(of: CGSize(width: 600, height: 600))
+        Self.thumbnails[file] = made
+        return made
+    }
     var image: UIImage? {
         let name = (file as NSString).deletingPathExtension
         return Bundle.main.url(forResource: name, withExtension: "jpg").flatMap { UIImage(contentsOfFile: $0.path) }
@@ -559,8 +571,8 @@ struct Photo: Decodable {
 }
 
 struct NewTabView: View {
+    let photo: Photo? // the tab's own, so its card on the tabs screen shows the same one
     @Binding var sheet: BrowserView.Sheet?
-    @State private var photo = Photo.all.randomElement()
 
     var body: some View {
         ZStack {
@@ -952,10 +964,19 @@ struct TabCard: View {
 
     @ViewBuilder private var preview: some View {
         if tab.isNewTab {
-            ZStack {
-                LinearGradient(colors: [Color(.secondarySystemBackground), Color(.tertiarySystemBackground)], startPoint: .top, endPoint: .bottom)
-                Image(systemName: "plus.square.on.square").font(.fjord(size: 26)).foregroundStyle(.secondary)
-            }
+            // A small version of the tab's new-tab page: its photo with the time
+            Color.black
+                .overlay { if let thumb = tab.photo?.thumbnail { Image(uiImage: thumb).resizable().scaledToFill() } }
+                .overlay { LinearGradient(colors: [.black.opacity(0.3), .clear, .black.opacity(0.35)], startPoint: .top, endPoint: .bottom) }
+                .overlay(alignment: .top) {
+                    TimelineView(.everyMinute) { context in
+                        Text(context.date, format: .dateTime.hour().minute())
+                            .font(.fjord(size: 30, weight: .thin)).monospacedDigit()
+                            .foregroundStyle(.white).shadow(color: .black.opacity(0.25), radius: 6)
+                    }
+                    .padding(.top, 26)
+                }
+                .clipped()
         } else if let image = tab.snapshot {
             Image(uiImage: image).resizable().scaledToFill()
                 .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .top)
