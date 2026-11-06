@@ -14,6 +14,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         History.selfCheck()
         #endif
         Cast.shared.setUp()
+        let bar = UINavigationBar.appearance()
+        bar.titleTextAttributes = [.font: UIFont.fjord(17, .semibold)]
+        bar.largeTitleTextAttributes = [.font: UIFont.fjord(34, .bold)]
         return true
     }
     func application(_ application: UIApplication, configurationForConnecting session: UISceneSession,
@@ -68,6 +71,7 @@ struct RootView: View {
             }
         }
         .tint(.primary)
+        .font(.fjord(.body)) // Geist for everything that doesn't pick its own size
     }
 }
 

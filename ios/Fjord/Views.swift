@@ -13,14 +13,51 @@ extension Animation {
     static func fjord(reduced: Bool) -> Animation { reduced ? .easeInOut(duration: 0.18) : .fjord }
 }
 
+// Geist, Fjord's font on computers, at the sizes of iOS's text styles so Dynamic Type still scales it
+extension Font {
+    static func fjord(_ style: TextStyle) -> Font {
+        let size: CGFloat = switch style {
+        case .largeTitle: 34
+        case .title: 28
+        case .title2: 22
+        case .title3: 20
+        case .callout: 16
+        case .subheadline: 15
+        case .footnote: 13
+        case .caption: 12
+        case .caption2: 11
+        default: 17 // body and headline
+        }
+        let font = Font.custom("Geist", size: size, relativeTo: style)
+        return style == .headline ? font.weight(.semibold) : font
+    }
+    static func fjord(size: CGFloat, weight: Weight = .regular) -> Font { .custom("Geist", fixedSize: size).weight(weight) }
+}
+extension UIFont {
+    // For the parts UIKit draws, like navigation titles
+    static func fjord(_ size: CGFloat, _ weight: Weight) -> UIFont {
+        let d = UIFontDescriptor(fontAttributes: [.family: "Geist", .traits: [UIFontDescriptor.TraitKey.weight: weight]])
+        return UIFont(descriptor: d, size: size)
+    }
+}
+
 // iOS 26's Liquid Glass where there is one, a frosted material before it
 extension View {
-    @ViewBuilder func fjordGlass(_ shape: some Shape) -> some View {
+    func fjordGlass(_ shape: some Shape) -> some View { modifier(FjordGlass(shape: AnyShape(shape))) }
+}
+extension EnvironmentValues {
+    // How much of the background colour the glass takes on: none over the new tab's photo, a little on pages, so
+    // text on busy pages behind it doesn't show through (the fade under the bar does the rest)
+    @Entry var glassTint = 0.0
+}
+struct FjordGlass: ViewModifier {
+    let shape: AnyShape
+    @Environment(\.glassTint) private var tint
+    func body(content: Content) -> some View {
         if #available(iOS 26, *) {
-            // tinted a little with the background, so text on busy pages behind it doesn't show through
-            glassEffect(.regular.tint(Color(.systemBackground).opacity(0.5)), in: shape)
+            content.glassEffect(tint > 0 ? .regular.tint(Color(.systemBackground).opacity(tint)) : .regular, in: shape)
         } else {
-            background(.regularMaterial, in: shape).shadow(color: .black.opacity(0.14), radius: 12, y: 4)
+            content.background(.regularMaterial, in: shape).shadow(color: .black.opacity(0.14), radius: 12, y: 4)
         }
     }
 }
@@ -60,11 +97,14 @@ struct BrowserView: View {
         }
         .animation(.fjord(reduced: reduceMotion), value: browser.showingTabs)
         .sheet(item: $sheet) { which in
-            switch which {
-            case .shields: if let tab = browser.current { ShieldsSheet(tab: tab).presentationDetents([.medium]) }
-            case .settings: SettingsView()
-            case .report: ReportSheet()
+            Group {
+                switch which {
+                case .shields: if let tab = browser.current { ShieldsSheet(tab: tab).presentationDetents([.medium]) }
+                case .settings: SettingsView()
+                case .report: ReportSheet()
+                }
             }
+            .font(.fjord(.body)) // sheets don't take the window's font
         }
         .onChange(of: browser.showingTabs) { _, showing in
             StatusBar.style = showing ? .default : browser.current.map(StatusBar.style(for:)) ?? .default
@@ -163,13 +203,24 @@ struct BottomBar: View {
     // grows back from it, while the toolbar and the bar's own background fade and slide away under it
     private var suggestions: [History.Suggestion] {
         guard editing, text != tab.url?.absoluteString else { return [] }
-        return History.shared.suggestions(for: text)
+        return History.shared.suggestions(for: text, limit: 4) // a short list, so it doesn't cover the page
     }
 
     var body: some View {
         VStack(spacing: 10) {
-            field
-            if !collapsed {
+            HStack(alignment: .bottom, spacing: 12) { // Cancel stays beside the line you type on as the panel grows
+                field
+                if editing {
+                    Button("Cancel") { editing = false }
+                        .fontWeight(.medium)
+                        .padding(.horizontal, hasGlass ? 16 : 0)
+                        .frame(height: 48)
+                        .modifier(ToolbarGlass()) // its own glass, so it stays readable over busy pages
+                        .transition(.opacity.combined(with: .move(edge: .trailing)))
+                }
+            }
+            // While you type, the toolbar steps aside, like Safari's: only the field and its suggestions are left
+            if !collapsed && !editing {
                 toolbar.transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .bottom)))
             }
         }
@@ -192,25 +243,17 @@ struct BottomBar: View {
             .ignoresSafeArea()
             .opacity(collapsed ? 0 : 1)
         }
-        // The sites for what's typed float just above the bar, over the page, rather than pushing the bar up
-        .overlay(alignment: .top) {
-            let suggestions = self.suggestions
-            if !suggestions.isEmpty {
-                SuggestionList(suggestions: suggestions) { open($0.url) }
-                    .padding(.horizontal, 14)
-                    .alignmentGuide(.top) { $0[.bottom] + 10 }
-                    .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .bottom)))
-            }
-        }
         .modifier(BarScheme(scheme: barScheme))
+        .environment(\.glassTint, tab.isNewTab ? 0 : 0.2)
         .animation(.fjord(reduced: reduceMotion), value: collapsed)
+        .animation(.fjord(reduced: reduceMotion), value: editing)
         .onAppear { text = shownAddress }
         .onChange(of: tab.url) { if !editing { text = shownAddress } }
         .onChange(of: editing) { _, now in text = now ? (tab.url?.absoluteString ?? "") : shownAddress }
         .onChange(of: text) { old, new in
             completion = editing && new.count > old.count && new.hasPrefix(old) ? History.shared.completion(for: new) : nil
         }
-        .animation(.easeOut(duration: 0.15), value: suggestions.map(\.id))
+        .animation(.fjord(reduced: reduceMotion), value: suggestions.map(\.id))
         #if DEBUG
         .task { // Simulator tests: -FjordType <text> types it into the address bar
             let args = ProcessInfo.processInfo.arguments
@@ -228,13 +271,32 @@ struct BottomBar: View {
         editing = false
     }
 
+    // The field grows upward into one panel while you type: the matching sites sit inside it, above the text, with the
+    // best one right next to what you typed
     private var field: some View {
+        VStack(spacing: 0) {
+            let suggestions = self.suggestions
+            if !suggestions.isEmpty {
+                SuggestionList(suggestions: suggestions) { open($0.url) }
+                    .transition(.opacity)
+                Divider().padding(.horizontal, 16)
+            }
+            fieldLine
+        }
+        .frame(maxWidth: collapsed ? nil : .infinity)
+        .modifier(FieldBackground(collapsed: collapsed))
+        .overlay(alignment: .bottom) {
+            if collapsed || hasGlass { ProgressLine(tab: tab).padding(.horizontal, collapsed ? 10 : 22) }
+        }
+    }
+
+    private var fieldLine: some View {
         ZStack {
             if collapsed {
                 Button { tab.barCollapsed = false } label: {
                     HStack(spacing: 5) {
-                        if !shieldsOn { Image(systemName: "shield.slash").font(.caption2.weight(.semibold)) }
-                        Text(shownAddress).font(.footnote.weight(.semibold)).lineLimit(1)
+                        if !shieldsOn { Image(systemName: "shield.slash").font(.fjord(.caption2).weight(.semibold)) }
+                        Text(shownAddress).font(.fjord(.footnote).weight(.semibold)).lineLimit(1)
                     }
                     .padding(.horizontal, 14)
                     .frame(height: 32)
@@ -246,11 +308,6 @@ struct BottomBar: View {
             } else {
                 addressBar.transition(.opacity)
             }
-        }
-        .frame(maxWidth: collapsed ? nil : .infinity)
-        .modifier(FieldBackground(collapsed: collapsed))
-        .overlay(alignment: .bottom) {
-            if collapsed || hasGlass { ProgressLine(tab: tab).padding(.horizontal, collapsed ? 10 : 22) }
         }
     }
 
@@ -284,7 +341,15 @@ struct BottomBar: View {
                     browser.go(completion ?? text)
                     editing = false
                 }
-            if tab.isLoading {
+            if editing {
+                if !text.isEmpty {
+                    Button { text = "" } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary).frame(width: 28, height: 28)
+                    }
+                    .accessibilityLabel("Clear")
+                    .transition(.opacity)
+                }
+            } else if tab.isLoading {
                 Button { tab.webView.stopLoading() } label: { Image(systemName: "xmark").frame(width: 28, height: 28) }
                     .accessibilityLabel("Stop")
                     .transition(.opacity)
@@ -325,7 +390,7 @@ struct BottomBar: View {
             Button { browser.newTab() } label: { Image(systemName: "plus") }.accessibilityLabel("New tab")
             Spacer()
             Button { browser.showTabs() } label: {
-                Text("\(browser.tabs.count)").font(.system(size: 13, weight: .semibold))
+                Text("\(browser.tabs.count)").font(.fjord(size: 13, weight: .semibold))
                     .contentTransition(.numericText())
                     .frame(width: 22, height: 22)
                     .overlay(RoundedRectangle(cornerRadius: 6).stroke(.primary, lineWidth: 1.6))
@@ -334,7 +399,7 @@ struct BottomBar: View {
             Spacer()
             Button { sheet = .settings } label: { Image(systemName: "gearshape") }.accessibilityLabel("Fjord settings")
         }
-        .font(.system(size: 19))
+        .font(.fjord(size: 19))
         .padding(.horizontal, hasGlass ? 22 : 10)
         .padding(.vertical, hasGlass ? 12 : 0)
         .modifier(ToolbarGlass())
@@ -342,12 +407,13 @@ struct BottomBar: View {
     }
 }
 
-// The address field: a glass capsule, or before iOS 26 a grey field on the bar that turns frosted when it shrinks
+// The address field: glass, or before iOS 26 a grey field on the bar that turns frosted when it shrinks
 struct FieldBackground: ViewModifier {
     let collapsed: Bool
     func body(content: Content) -> some View {
         if hasGlass {
-            content.fjordGlass(Capsule())
+            // the same as a capsule for the one-line field, and a rounded panel once suggestions grow it
+            content.fjordGlass(RoundedRectangle(cornerRadius: collapsed ? 16 : 24, style: .continuous))
         } else {
             content.background {
                 RoundedRectangle(cornerRadius: collapsed ? 11 : 24, style: .continuous)
@@ -365,27 +431,29 @@ struct BarScheme: ViewModifier {
     }
 }
 
+// The toolbar and Cancel: each a glass capsule with iOS 26, plain on the bar before it
 struct ToolbarGlass: ViewModifier {
     func body(content: Content) -> some View {
         if hasGlass { content.fjordGlass(Capsule()) } else { content }
     }
 }
 
-// The sites that match what's typed, best first, each a row you tap to open
+// The sites that match what's typed, each a row you tap to open: the best at the bottom, next to the text
+// (VoiceOver still reads the best first)
 struct SuggestionList: View {
     let suggestions: [History.Suggestion]
     let open: (History.Suggestion) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(suggestions) { s in
+            ForEach(Array(suggestions.enumerated().reversed()), id: \.element.id) { rank, s in
                 Button { open(s) } label: {
                     HStack(spacing: 12) {
                         Image(systemName: s.visited ? "clock" : "globe")
-                            .font(.subheadline).foregroundStyle(.secondary).frame(width: 22)
+                            .font(.fjord(.subheadline)).foregroundStyle(.secondary).frame(width: 22)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(s.title.isEmpty ? s.address : s.title).lineLimit(1)
-                            if !s.title.isEmpty { Text(s.address).font(.footnote).foregroundStyle(.secondary).lineLimit(1) }
+                            if !s.title.isEmpty { Text(s.address).font(.fjord(.footnote)).foregroundStyle(.secondary).lineLimit(1) }
                         }
                         Spacer(minLength: 0)
                     }
@@ -395,10 +463,11 @@ struct SuggestionList: View {
                 }
                 .buttonStyle(SuggestionRow())
                 .accessibilityLabel(s.title.isEmpty ? s.address : "\(s.title), \(s.address)")
+                .accessibilitySortPriority(Double(suggestions.count - rank))
             }
         }
         .padding(.vertical, 4)
-        .fjordGlass(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -493,10 +562,10 @@ struct NewTabView: View {
                     TimelineView(.everyMinute) { context in
                         VStack(spacing: 2) {
                             Text(context.date, format: .dateTime.hour().minute())
-                                .font(.system(size: 76, weight: .thin))
+                                .font(.fjord(size: 76, weight: .thin))
                                 .monospacedDigit()
                             Text(context.date, format: .dateTime.weekday(.wide).month(.wide).day())
-                                .font(.system(size: 17, weight: .medium))
+                                .font(.fjord(size: 17, weight: .medium))
                         }
                     }
                     .foregroundStyle(.white)
@@ -509,7 +578,7 @@ struct NewTabView: View {
                     Spacer()
                     if let photo {
                         Link(destination: URL(string: photo.page) ?? URL(string: "https://unsplash.com")!) {
-                            Text("Photo by \(photo.by) on Unsplash").font(.footnote)
+                            Text("Photo by \(photo.by) on Unsplash").font(.fjord(.footnote))
                         }
                         .foregroundStyle(.white.opacity(0.8))
                         .padding(.top, 14)
@@ -530,20 +599,20 @@ struct StatsCard: View {
         VStack(spacing: 10) {
             if stats.total == 0 {
                 Text("Trackers Fjord stops will be counted here.")
-                    .font(.footnote.weight(.medium)).foregroundStyle(.white.opacity(0.85))
+                    .font(.fjord(.footnote).weight(.medium)).foregroundStyle(.white.opacity(0.85))
             } else {
                 VStack(spacing: 1) {
                     Text(stats.total.formatted())
-                        .font(.system(size: 26, weight: .semibold)).monospacedDigit()
+                        .font(.fjord(size: 26, weight: .semibold)).monospacedDigit()
                         .contentTransition(.numericText())
-                    Text(since).font(.footnote.weight(.medium)).foregroundStyle(.white.opacity(0.85))
+                    Text(since).font(.fjord(.footnote).weight(.medium)).foregroundStyle(.white.opacity(0.85))
                 }
                 Text("\(duration(stats.timeSaved)) and \(ByteCountFormatter.string(fromByteCount: stats.bytesSaved, countStyle: .file)) saved")
-                    .font(.caption.weight(.medium)).monospacedDigit().foregroundStyle(.white.opacity(0.8))
+                    .font(.fjord(.caption).weight(.medium)).monospacedDigit().foregroundStyle(.white.opacity(0.8))
                 WeekBars(week: stats.week).frame(width: 168)
                 if !stats.topCompanies.isEmpty {
                     Text("Tried most this week: \(stats.topCompanies.formatted(.list(type: .and)))")
-                        .font(.caption).foregroundStyle(.white.opacity(0.75))
+                        .font(.fjord(.caption)).foregroundStyle(.white.opacity(0.75))
                 }
             }
         }
@@ -575,7 +644,7 @@ struct WeekBars: View {
                 VStack(spacing: 4) {
                     Capsule().fill(.white.opacity(Calendar.current.isDateInToday(day.date) ? 0.95 : 0.55))
                         .frame(width: 6, height: max(3, 26 * CGFloat(day.count) / CGFloat(most)))
-                    Text(day.date, format: .dateTime.weekday(.narrow)).font(.system(size: 10, weight: .medium)).foregroundStyle(.white.opacity(0.7))
+                    Text(day.date, format: .dateTime.weekday(.narrow)).font(.fjord(size: 10, weight: .medium)).foregroundStyle(.white.opacity(0.7))
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -615,9 +684,9 @@ struct PrivacyReportView: View {
                         step("chevron.left", "The week before", enabled: weeksAgo + 1 < TrackerStats.weeks && (start.map { $0 < Calendar.current.startOfDay(for: first) } ?? false)) { weeksAgo += 1 }
                         Spacer()
                         VStack(spacing: 1) {
-                            Text(weeksAgo == 0 ? "This week" : weeksAgo == 1 ? "Last week" : "\(weeksAgo) weeks ago").font(.headline)
+                            Text(weeksAgo == 0 ? "This week" : weeksAgo == 1 ? "Last week" : "\(weeksAgo) weeks ago").font(.fjord(.headline))
                             Text("\(first.formatted(.dateTime.day().month())) – \(last.formatted(.dateTime.day().month()))")
-                                .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
+                                .font(.fjord(.subheadline)).foregroundStyle(.secondary).monospacedDigit()
                         }
                         .accessibilityElement(children: .combine)
                         Spacer()
@@ -625,9 +694,9 @@ struct PrivacyReportView: View {
                     }
                     if counted {
                         VStack(spacing: 2) {
-                            Text(report.total.formatted()).font(.system(size: 44, weight: .semibold)).monospacedDigit()
+                            Text(report.total.formatted()).font(.fjord(size: 44, weight: .semibold)).monospacedDigit()
                                 .contentTransition(.numericText())
-                            Text("trackers stopped").font(.subheadline).foregroundStyle(.secondary)
+                            Text("trackers stopped").font(.fjord(.subheadline)).foregroundStyle(.secondary)
                         }
                         .accessibilityElement(children: .combine)
                         ReportBars(days: report.days)
@@ -665,7 +734,7 @@ struct PrivacyReportView: View {
     }
 
     private func step(_ symbol: String, _ label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol).font(.body.weight(.semibold)).frame(width: 44, height: 44) }
+        Button(action: action) { Image(systemName: symbol).font(.fjord(.body).weight(.semibold)).frame(width: 44, height: 44) }
             .buttonStyle(.borderless)
             .disabled(!enabled)
             .accessibilityLabel(label)
@@ -680,7 +749,7 @@ struct PrivacyReportView: View {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(e.name)
-                        if !e.with.isEmpty { Text(sub(e.with)).font(.footnote).foregroundStyle(.secondary) }
+                        if !e.with.isEmpty { Text(sub(e.with)).font(.fjord(.footnote)).foregroundStyle(.secondary) }
                     }
                     Spacer()
                     Text(e.count.formatted()).monospacedDigit().foregroundStyle(.secondary)
@@ -708,7 +777,7 @@ struct ReportBars: View {
                 VStack(spacing: 6) {
                     RoundedRectangle(cornerRadius: 5).fill(.primary.opacity(0.8))
                         .frame(height: max(3, 80 * CGFloat(day.count) / CGFloat(most)))
-                    Text(day.date, format: .dateTime.weekday(.abbreviated)).font(.caption2.weight(.medium)).foregroundStyle(.secondary)
+                    Text(day.date, format: .dateTime.weekday(.abbreviated)).font(.fjord(.caption2).weight(.medium)).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -743,16 +812,16 @@ struct TabsView: View {
             }
             HStack {
                 Button { browser.newTab(); browser.showingTabs = false } label: {
-                    Image(systemName: "plus").font(.system(size: 20, weight: .medium)).frame(width: 44, height: 44)
+                    Image(systemName: "plus").font(.fjord(size: 20, weight: .medium)).frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("New tab")
                 Spacer()
                 Text("\(browser.tabs.count) \(browser.tabs.count == 1 ? "Tab" : "Tabs")")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.fjord(.subheadline).weight(.semibold))
                     .contentTransition(.numericText())
                 Spacer()
                 Button("Done") { browser.showingTabs = false }
-                    .font(.body.weight(.semibold)).frame(minWidth: 44, minHeight: 44)
+                    .font(.fjord(.body).weight(.semibold)).frame(minWidth: 44, minHeight: 44)
             }
             .padding(.horizontal, 16)
             .padding(.top, 6)
@@ -783,7 +852,7 @@ struct TabCard: View {
                 }
                 .overlay(alignment: .topTrailing) {
                     Button { close() } label: {
-                        Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
+                        Image(systemName: "xmark").font(.fjord(size: 11, weight: .bold))
                             .frame(width: 26, height: 26)
                             .background(.regularMaterial, in: Circle())
                             .frame(width: 44, height: 44) // a comfortable target around the small button
@@ -797,7 +866,7 @@ struct TabCard: View {
                     Image(uiImage: icon).resizable().scaledToFit().frame(width: 16, height: 16)
                         .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
-                Text(title).font(.caption.weight(.semibold)).lineLimit(1)
+                Text(title).font(.fjord(.caption).weight(.semibold)).lineLimit(1)
             }
             .padding(.horizontal, 4)
         }
@@ -830,7 +899,7 @@ struct TabCard: View {
         if tab.isNewTab {
             ZStack {
                 LinearGradient(colors: [Color(.secondarySystemBackground), Color(.tertiarySystemBackground)], startPoint: .top, endPoint: .bottom)
-                Image(systemName: "plus.square.on.square").font(.system(size: 26)).foregroundStyle(.secondary)
+                Image(systemName: "plus.square.on.square").font(.fjord(size: 26)).foregroundStyle(.secondary)
             }
         } else if let image = tab.snapshot {
             Image(uiImage: image).resizable().scaledToFill()
@@ -839,7 +908,7 @@ struct TabCard: View {
         } else {
             ZStack {
                 Color(uiColor: tab.topColor ?? .secondarySystemBackground)
-                Text(tab.host ?? "").font(.footnote.weight(.medium)).foregroundStyle(.secondary).padding(8)
+                Text(tab.host ?? "").font(.fjord(.footnote).weight(.medium)).foregroundStyle(.secondary).padding(8)
             }
         }
     }
@@ -869,13 +938,13 @@ struct ShieldsSheet: View {
     var body: some View {
         let site = Shields.site(tab.host ?? "")
         VStack(alignment: .leading, spacing: 14) {
-            Text(site).font(.title3.weight(.semibold))
+            Text(site).font(.fjord(.title3).weight(.semibold))
             if blocking {
                 Toggle(isOn: $on) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Shields").font(.headline)
+                        Text("Shields").font(.fjord(.headline))
                         Text(on ? "Ads and trackers on this site are blocked before they load." : "Ads and trackers can load on this site.")
-                            .font(.subheadline).foregroundStyle(.secondary)
+                            .font(.fjord(.subheadline)).foregroundStyle(.secondary)
                     }
                 }
                 .onChange(of: on) { _, now in
@@ -883,7 +952,7 @@ struct ShieldsSheet: View {
                     tab.applyBlocking(for: tab.host)
                     tab.reload()
                 }
-                Text("Site not working? Turn Shields off for just this site.").font(.footnote).foregroundStyle(.secondary)
+                Text("Site not working? Turn Shields off for just this site.").font(.fjord(.footnote)).foregroundStyle(.secondary)
             } else {
                 Text("Blocking ads and trackers is off everywhere. Turn it on in Fjord settings.").foregroundStyle(.secondary)
             }
@@ -909,7 +978,7 @@ struct ShieldsSheet: View {
             } label: {
                 Label("Forget this site now", systemImage: "trash")
             }
-            Text("Deletes its cookies and saved data, and closes the tab. You'll be signed out.").font(.footnote).foregroundStyle(.secondary)
+            Text("Deletes its cookies and saved data, and closes the tab. You'll be signed out.").font(.fjord(.footnote)).foregroundStyle(.secondary)
             Spacer()
         }
         .padding(24)
@@ -927,8 +996,8 @@ struct LookalikeView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 34)).foregroundStyle(.orange)
-            Text("Is this the site you meant?").font(.title2.weight(.semibold))
+            Image(systemName: "exclamationmark.triangle.fill").font(.fjord(size: 34)).foregroundStyle(.orange)
+            Text("Is this the site you meant?").font(.fjord(.title2).weight(.semibold))
             (Text(warning.host).bold() + Text(" looks a lot like ") + Text(warning.real).bold()
                 + Text(". Fake sites copy popular names to steal passwords and card numbers."))
                 .foregroundStyle(.secondary)
@@ -938,7 +1007,7 @@ struct LookalikeView: View {
                 Button { tab.leaveWarning() } label: { Text("Go back").frame(maxWidth: .infinity) }
                     .buttonStyle(.bordered).controlSize(.large)
                 Button("Open \(warning.host) anyway") { tab.openAnyway() }
-                    .font(.subheadline).foregroundStyle(.secondary).padding(.top, 4)
+                    .font(.fjord(.subheadline)).foregroundStyle(.secondary).padding(.top, 4)
             }
             .padding(.top, 8)
         }
@@ -955,8 +1024,8 @@ struct ErrorView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: "wifi.exclamationmark").font(.system(size: 34)).foregroundStyle(.secondary)
-            Text("Couldn't open the page").font(.title3.weight(.semibold))
+            Image(systemName: "wifi.exclamationmark").font(.fjord(size: 34)).foregroundStyle(.secondary)
+            Text("Couldn't open the page").font(.fjord(.title3).weight(.semibold))
             Text(message).multilineTextAlignment(.center).foregroundStyle(.secondary)
             Button("Try again") { tab.reload() }.buttonStyle(.bordered).padding(.top, 6)
         }
@@ -1123,7 +1192,7 @@ struct LockView: View {
             if let logo = Bundle.main.url(forResource: "logo", withExtension: "png").flatMap({ UIImage(contentsOfFile: $0.path) }) {
                 Image(uiImage: logo).resizable().frame(width: 72, height: 72).clipShape(RoundedRectangle(cornerRadius: 17))
             }
-            Text("Fjord is locked").font(.title2.weight(.semibold))
+            Text("Fjord is locked").font(.fjord(.title2).weight(.semibold))
             Button("Unlock") { lock.unlock() }.buttonStyle(.borderedProminent).controlSize(.large)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

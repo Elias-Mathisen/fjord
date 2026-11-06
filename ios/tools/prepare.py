@@ -152,6 +152,10 @@ def photos():
 
 def branding():
     shutil.copy(os.path.join(ROOT, "src", "fjord", "branding", "logo.png"), os.path.join(RES, "logo.png"))
+    # Geist, Fjord's font on computers (ios/Geist-Variable.ttf is src/fjord/fonts/Geist-Variable.woff2 as a TTF,
+    # which iOS can load), with its licence
+    shutil.copy(os.path.join(IOS, "Geist-Variable.ttf"), os.path.join(RES, "Geist-Variable.ttf"))
+    shutil.copy(os.path.join(ROOT, "src", "fjord", "fonts", "Geist-LICENSE.txt"), os.path.join(RES, "Geist-LICENSE.txt"))
     icon = os.path.join(ASSETS, "AppIcon.appiconset")
     os.makedirs(icon, exist_ok=True)
     # Full-bleed, without the macOS icon's margin and corners: iOS rounds it itself (drawn by tools/make-icon.py)

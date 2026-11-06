@@ -15,6 +15,11 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Geist, Fjord's font (copied into Resources by tools/prepare.py) -->
+	<key>UIAppFonts</key>
+	<array>
+		<string>Geist-Variable.ttf</string>
+	</array>
 	<!-- Chromecasts on the local network, and ones running YouTube (receiver 233637DE), for Cast.swift -->
 	<key>NSBonjourServices</key>
 	<array>

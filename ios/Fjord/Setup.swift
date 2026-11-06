@@ -91,13 +91,13 @@ struct SetupView: View {
                 Image(uiImage: logo).resizable().frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
                     .padding(.bottom, 22)
             }
-            Text("Welcome to Fjord").font(.system(size: 36, weight: .bold)).tracking(-0.6)
+            Text("Welcome to Fjord").font(.fjord(size: 36, weight: .bold)).tracking(-0.6)
             Text("Ads and trackers are blocked from the first page you open. Make a few choices and you're set.")
-                .font(.title3).foregroundStyle(.white.opacity(0.85)).padding(.top, 10)
+                .font(.fjord(.title3)).foregroundStyle(.white.opacity(0.85)).padding(.top, 10)
             Button { go(1) } label: { Text("Get started").frame(maxWidth: .infinity) }
                 .buttonStyle(SetupButton(light: true)).padding(.top, 36)
             Button("Skip setup", action: finish)
-                .font(.body.weight(.medium)).foregroundStyle(.white.opacity(0.85))
+                .font(.fjord(.body).weight(.medium)).foregroundStyle(.white.opacity(0.85))
                 .frame(maxWidth: .infinity, minHeight: 44).padding(.top, 6)
         }
         .foregroundStyle(.white)
@@ -109,16 +109,16 @@ struct SetupView: View {
     private var done: some View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer()
-            Text("You're all set").font(.system(size: 36, weight: .bold)).tracking(-0.6)
+            Text("You're all set").font(.fjord(size: 36, weight: .bold)).tracking(-0.6)
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(["Ads and trackers blocked", "Fake sites stopped", "Tracking removed from links",
                          "A different fingerprint for every site"], id: \.self) { line in
-                    Label(line, systemImage: "checkmark").font(.body.weight(.medium))
+                    Label(line, systemImage: "checkmark").font(.fjord(.body).weight(.medium))
                 }
             }
             .padding(.top, 20)
             Text("Fjord's settings are behind the gear in the toolbar.")
-                .font(.subheadline).foregroundStyle(.white.opacity(0.8)).padding(.top, 22)
+                .font(.fjord(.subheadline)).foregroundStyle(.white.opacity(0.8)).padding(.top, 22)
             Button(action: finish) { Text("Start browsing").frame(maxWidth: .infinity) }
                 .buttonStyle(SetupButton(light: true)).padding(.top, 30)
                 .padding(.bottom, 50) // where Skip setup was, so the button doesn't jump between the photo steps
@@ -142,8 +142,8 @@ struct SetupView: View {
             .accessibilityElement().accessibilityLabel("Step \(step) of \(last - 1)")
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(title).font(.largeTitle.weight(.bold)).tracking(-0.4)
-                    Text(text).font(.body).foregroundStyle(.secondary).padding(.top, 8)
+                    Text(title).font(.fjord(.largeTitle).weight(.bold)).tracking(-0.4)
+                    Text(text).font(.fjord(.body)).foregroundStyle(.secondary).padding(.top, 8)
                     content().padding(.top, 28)
                 }
                 .padding(.horizontal, 24).padding(.top, 34).padding(.bottom, 24)
@@ -151,7 +151,7 @@ struct SetupView: View {
                 .frame(maxWidth: .infinity)
             }
             HStack {
-                Button("Back") { go(step - 1) }.font(.body.weight(.medium)).frame(minWidth: 64, minHeight: 44)
+                Button("Back") { go(step - 1) }.font(.fjord(.body).weight(.medium)).frame(minWidth: 64, minHeight: 44)
                 Spacer()
                 Button { go(step + 1) } label: { Text("Continue").padding(.horizontal, 26) }.buttonStyle(SetupButton(light: false))
             }
@@ -193,15 +193,15 @@ struct SetupView: View {
         Button(action: pick) {
             HStack(alignment: .top, spacing: 14) {
                 if let symbol {
-                    Image(systemName: symbol).font(.title3).frame(width: 28).padding(.top, 1)
+                    Image(systemName: symbol).font(.fjord(.title3)).frame(width: 28).padding(.top, 1)
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(title).font(.headline)
-                    if !text.isEmpty { Text(text).font(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) }
+                    Text(title).font(.fjord(.headline))
+                    if !text.isEmpty { Text(text).font(.fjord(.subheadline)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) }
                 }
                 Spacer(minLength: 8)
                 Image(systemName: on ? "checkmark.circle.fill" : "circle")
-                    .font(.title3).foregroundStyle(on ? Color.primary : Color.secondary.opacity(0.5))
+                    .font(.fjord(.title3)).foregroundStyle(on ? Color.primary : Color.secondary.opacity(0.5))
                     .contentTransition(.symbolEffect(.replace))
             }
             .multilineTextAlignment(.leading)
@@ -218,8 +218,8 @@ struct SetupView: View {
     private func toggle(_ title: String, _ text: String, _ value: Binding<Bool>) -> some View {
         Toggle(isOn: value) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.headline)
-                Text(text).font(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(title).font(.fjord(.headline))
+                Text(text).font(.fjord(.subheadline)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(16)
@@ -232,7 +232,7 @@ struct SetupButton: ButtonStyle {
     let light: Bool
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.body.weight(.semibold))
+            .font(.fjord(.body).weight(.semibold))
             .foregroundStyle(light ? Color.black : Color(.systemBackground))
             .frame(minHeight: 50)
             .background(light ? Color.white : Color.primary, in: Capsule())
