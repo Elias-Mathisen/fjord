@@ -126,6 +126,11 @@ struct BrowserView: View {
                 try? await Task.sleep(for: .seconds(4))
                 switch ProcessInfo.processInfo.arguments[i + 1] {
                 case "tabs": browser.showTabs()
+                case "newtab-from-tabs": // the + on the tabs screen, 6 seconds after it opens
+                    browser.showTabs()
+                    try? await Task.sleep(for: .seconds(6))
+                    browser.newTab()
+                    browser.showingTabs = false
                 case let s: sheet = Sheet(rawValue: s)
                 }
             }
@@ -558,15 +563,19 @@ struct NewTabView: View {
     @State private var photo = Photo.all.randomElement()
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                if let image = photo?.image {
-                    Image(uiImage: image).resizable().scaledToFill()
-                        .frame(width: geo.size.width, height: geo.size.height).clipped()
-                } else {
-                    Color(.systemBackground)
+        ZStack {
+            // The photo fills the whole screen by itself, edges included, so it never waits on a measured size: during
+            // the switch from the tabs screen that briefly leaves out the status bar and home indicator, which showed black
+            Color.black
+                .overlay {
+                    if let image = photo?.image { Image(uiImage: image).resizable().scaledToFill() } else { Color(.systemBackground) }
                 }
-                LinearGradient(colors: [.black.opacity(0.35), .clear, .black.opacity(0.15), .black.opacity(0.6)], startPoint: .top, endPoint: .bottom)
+                .overlay {
+                    LinearGradient(colors: [.black.opacity(0.35), .clear, .black.opacity(0.15), .black.opacity(0.6)], startPoint: .top, endPoint: .bottom)
+                }
+                .clipped()
+                .ignoresSafeArea()
+            GeometryReader { geo in
                 VStack(spacing: 4) {
                     TimelineView(.everyMinute) { context in
                         VStack(spacing: 2) {
@@ -594,9 +603,10 @@ struct NewTabView: View {
                     }
                     Spacer().frame(height: hasGlass ? 165 : 130) // the bottom bar, which the photo shows through with glass
                 }
+                .frame(maxWidth: .infinity)
             }
+            .ignoresSafeArea()
         }
-        .ignoresSafeArea()
     }
 }
 
