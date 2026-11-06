@@ -66,6 +66,8 @@ p { margin: 0; text-wrap: pretty; }
 /* Shields story: three chapters, text beside an illustration, alternating sides */
 .story { display: grid; gap: clamp(64px, 9vw, 120px); padding: clamp(80px, 11vw, 140px) var(--gutter) clamp(64px, 9vw, 120px); max-width: 1180px; margin: 0 auto; }
 .story + .section { padding-top: 0; }
+.section + .safari { padding-top: 0; } /* the Safari chapter right after Also in Fjord */
+.chapter-text > p.small { font-size: 14px; }
 .chapter { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 96px); align-items: center; }
 .chapter:nth-child(even) .chapter-text { order: 2; }
 .chapter-text { display: grid; gap: 20px; max-width: 460px; }
