@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fjord · The private browser built on Firefox</title>
-<meta name="description" content="Fjord blocks ads and trackers on every site, sends nothing about you anywhere, and runs on Firefox. Free for Windows, Mac and Linux.">
+<meta name="description" content="Fjord blocks ads and trackers on every site, sends nothing about you anywhere, and runs on Firefox. Free for Windows, Mac, Linux and iPhone.">
 <meta property="og:title" content="Fjord · The private browser built on Firefox">
 <meta property="og:description" content="Ads and trackers blocked from the first page you open. No telemetry. Free.">
 <meta property="og:image" content="assets/newtab.jpg">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
@@ -17,9 +17,8 @@
 <header class="nav">
   <a class="brand" href="#top"><img src="assets/logo.png" alt=""> Fjord</a>
   <nav aria-label="Main">
-    <a href="#shields">Shields</a>
     <a href="#features">Features</a>
-    <a href="#privacy">Privacy</a>
+    <a href="#compare">Compare</a>
     <a href="#faq">Questions</a>
     <a href="https://github.com/Elias-Mathisen/fjord">GitHub</a>
   </nav>
@@ -34,7 +33,7 @@
       <p>Fjord blocks ads and trackers on every site, sends nothing about you anywhere, and runs on Firefox, so it gets every security fix the day Mozilla ships it.</p>
       <div class="hero-actions">
         <a class="btn" href="https://github.com/Elias-Mathisen/fjord/releases/latest/download/FjordSetup.exe">Download for Windows</a>
-        <span class="muted">Free · Windows 10 and 11 · <a href="#download">Mac and Linux</a></span>
+        <span class="muted">Free · Windows 10 and 11 · <a href="#download">Mac, Linux and iPhone</a></span>
       </div>
     </div>
     <figure class="hero-shot">
@@ -42,156 +41,73 @@
     </figure>
   </section>
 
-  <!-- How Shields works, in three chapters: text on one side, an illustration on the other -->
-  <section id="shields" class="story">
-    <article class="chapter">
-      <div class="chapter-text">
-        <h2>Most pages tell other companies you're there.</h2>
-        <p>Open a news site and it quietly reports your visit to advertisers and analytics firms: what you read, roughly where you are, how long you stay. Nothing on the page shows it happening.</p>
-      </div>
-      <figure class="art"><img src="assets/art/reports.jpg" alt="A cabin by a fjord, with a trail of paper envelopes flying from its window to radio masts across the water" width="1200" height="1500" loading="lazy"></figure>
-    </article>
-    <article class="chapter">
-      <div class="chapter-text">
-        <h2>Fjord stops those reports before they leave.</h2>
-        <p>uBlock Origin and Firefox's strict tracking protection are built in and on from the first page you open. Blocked requests never leave your computer, so pages load faster too.</p>
-      </div>
-      <figure class="art"><img src="assets/art/stopped.jpg" alt="The same cabin, with the envelopes falling harmlessly into the water before they reach the far shore" width="1200" height="1500" loading="lazy"></figure>
-    </article>
-    <article class="chapter">
-      <div class="chapter-text">
-        <h2>One dial for each site.</h2>
-        <p>Shields in the address bar shows which companies a page tried to reach. If a site breaks, turn it down for that site only. Lockdown turns off scripts and cookies on sites you don't trust.</p>
-      </div>
-      <figure class="art"><img src="assets/art/dial.jpg" alt="A hand turning a large dial with four settings" width="1200" height="1500" loading="lazy"></figure>
-    </article>
-  </section>
-  <!-- Also in Fjord: pick a feature on the left and its illustration and description show on the right (main.js) -->
+  <!-- What's in Fjord: every feature in a line, in three groups, no pictures -->
   <section id="features" class="section">
-    <h2>Also in Fjord</h2>
-
-    <div class="explorer">
-      <div class="picker" role="tablist" aria-label="Features" aria-orientation="vertical">
-        <button role="tab" id="t-fake" aria-controls="p-fake" aria-selected="true">Fake sites stopped</button>
-        <button role="tab" id="t-redirect" aria-controls="p-redirect" aria-selected="false" tabindex="-1">No tracking redirects</button>
-        <button role="tab" id="t-youtube" aria-controls="p-youtube" aria-selected="false" tabindex="-1">A private YouTube player</button>
-        <button role="tab" id="t-print" aria-controls="p-print" aria-selected="false" tabindex="-1">A different fingerprint everywhere</button>
-        <button role="tab" id="t-clip" aria-controls="p-clip" aria-selected="false" tabindex="-1">Clipboard guard</button>
-        <button role="tab" id="t-hide" aria-controls="p-hide" aria-selected="false" tabindex="-1">Hide this</button>
-        <button role="tab" id="t-mist" aria-controls="p-mist" aria-selected="false" tabindex="-1">Mist tabs and Ghost mode</button>
-        <button role="tab" id="t-lock" aria-controls="p-lock" aria-selected="false" tabindex="-1">App lock</button>
-        <button role="tab" id="t-cmd" aria-controls="p-cmd" aria-selected="false" tabindex="-1">Command bar</button>
-        <button role="tab" id="t-glance" aria-controls="p-glance" aria-selected="false" tabindex="-1">Link preview</button>
-        <button role="tab" id="t-design" aria-controls="p-design" aria-selected="false" tabindex="-1">Tools for designers</button>
-        <button role="tab" id="t-apps" aria-controls="p-apps" aria-selected="false" tabindex="-1">Apps in the sidebar</button>
-      </div>
-
-      <div class="stage">
-        <!-- Each panel: an illustration, and what the feature does under it -->
-        <div class="panel" role="tabpanel" id="p-fake" aria-labelledby="t-fake">
-          <figure class="feat-art"><img src="assets/art/f-fake.jpg" alt="Two cabins on a fjord shore. One is only a painted front propped up with beams, and a signpost points to the real one" width="1200" height="900"></figure>
-          <p>Sites named to look like a popular one are stopped before they load, with a link to the real one. The check runs on your computer.</p>
-        </div>
-
-        <div class="panel" role="tabpanel" id="p-redirect" aria-labelledby="t-redirect">
-          <figure class="feat-art"><img src="assets/art/f-redirect.jpg" alt="A rowing boat crossing a fjord straight from one jetty to another, ignoring a long detour past a lighthouse toll" width="1200" height="900" loading="lazy"></figure>
-          <p>Links that pass through Google, Facebook or a newsletter's click counter go straight to the real site, so the middleman never hears about it.</p>
-        </div>
-
-        <div class="panel" role="tabpanel" id="p-youtube" aria-labelledby="t-youtube">
-          <figure class="feat-art"><img src="assets/art/f-youtube.jpg" alt="A film projector in a cabin showing a mountain on a sheet, with the curtains drawn" width="1200" height="900" loading="lazy"></figure>
-          <p>Videos play on their own in YouTube's privacy-enhanced player: no recommendations, no comments, and nothing goes into your YouTube history.</p>
-        </div>
-
-        <div class="panel" role="tabpanel" id="p-print" aria-labelledby="t-print">
-          <figure class="feat-art"><img src="assets/art/f-print.jpg" alt="A row of carved wooden masks on hooks by a cabin door, each one a little different" width="1200" height="900" loading="lazy"></figure>
-          <p>Sites can recognise you by how your computer draws a picture or plays a sound. Fjord adds tiny made-up differences, new for every site and every time you start it.</p>
-        </div>
-
-        <div class="panel" role="tabpanel" id="p-clip" aria-labelledby="t-clip">
-          <figure class="feat-art"><img src="assets/art/f-clip.jpg" alt="A magpie tries to swap a key on a windowsill, and a hand puts the right key back" width="1200" height="900" loading="lazy"></figure>
-          <p>Some pages swap what you copy, so a wallet address or bank number you paste isn't the one you picked. Fjord notices and puts yours back.</p>
-        </div>
-
-        <div class="panel" role="tabpanel" id="p-hide" aria-labelledby="t-hide">
-          <figure class="feat-art"><img src="assets/art/f-hide.jpg" alt="A hand peels a paper notice off a cabin window, uncovering the view of the fjord" width="1200" height="900" loading="lazy"></figure>
-          <p>Right-click a cookie wall, a newsletter box or a sidebar you never read, and it's gone on that site from then on. Shields shows it again if you change your mind.</p>
-        </div>
-
-        <div class="panel" role="tabpanel" id="p-mist" aria-labelledby="t-mist">
-          <figure class="feat-art"><img src="assets/art/f-mist.jpg" alt="A rowing boat gliding into thick mist on a still fjord, leaving no wake" width="1200" height="900" loading="lazy"></figure>
-          <p>A Mist tab has its own cookies and forgets everything when you close it. Ghost mode does the same for all of Fjord, with exceptions for the sites you choose.</p>
-        </div>
-
-        <div class="panel" role="tabpanel" id="p-lock" aria-labelledby="t-lock">
-          <figure class="feat-art"><img src="assets/art/f-lock.jpg" alt="A hand with a key at a heavy padlock on a cabin door" width="1200" height="900" loading="lazy"></figure>
-          <p>On a shared computer, Fjord can ask for Windows Hello or Touch ID when it opens or after you've been away, and hides tab titles while it's locked.</p>
-        </div>
-
-        <div class="panel" role="tabpanel" id="p-cmd" aria-labelledby="t-cmd">
-          <figure class="feat-art"><img src="assets/art/f-cmd.jpg" alt="A hand holding an open compass over a map of a fjord" width="1200" height="900" loading="lazy"></figure>
-          <p>One box for your open tabs, bookmarks, history and everything Fjord does. Press <span class="keys-inline"><kbd>Ctrl</kbd> <kbd>K</kbd></span>, or <span class="keys-inline"><kbd>⌘</kbd> <kbd>K</kbd></span> on a Mac, and type “lockdown”, “mist” or the name of a tab.</p>
-        </div>
-
-        <div class="panel" role="tabpanel" id="p-glance" aria-labelledby="t-glance">
-          <figure class="feat-art"><img src="assets/art/f-glance.jpg" alt="Someone on a cabin porch looking at a distant cabin through a spyglass, with the close-up view shown in a circle" width="1200" height="900" loading="lazy"></figure>
-          <p>Shift-click a link and it opens in a window over the page, so you can read it without losing your place. Keep it as a tab, or press Esc.</p>
-        </div>
-
-        <div class="panel" role="tabpanel" id="p-design" aria-labelledby="t-design">
-          <figure class="feat-art"><img src="assets/art/f-design.jpg" alt="A drawing desk by a window with brushes, ink pots, grey swatches and an eyedropper" width="1200" height="900" loading="lazy"></figure>
-          <p>Pick a colour from any page, see which font something uses, save every image, SVG and font on a page, or screenshot the whole page at once.</p>
-        </div>
-
-        <div class="panel" role="tabpanel" id="p-apps" aria-labelledby="t-apps">
-          <figure class="feat-art"><img src="assets/art/f-apps.jpg" alt="A reading chair by a window, with a radio, a telephone and letters on a shelf within reach" width="1200" height="900" loading="lazy"></figure>
-          <p>Spotify, WhatsApp, Discord or any site you like, one click away and signed in, next to whatever you're reading.</p>
-        </div>
-      </div>
-    </div>
-
-    <ul class="more">
-      <li><b>Workspaces</b> keep tabs and sign-ins for work and home apart.</li>
-      <li><b>Memory saver</b> unloads tabs you haven't used for a while.</li>
-      <li><b>Your own VPN or proxy</b>, with nothing sent outside it if it drops.</li>
-      <li><b>Import</b> bookmarks, history and passwords from other browsers.</li>
-      <li><b>Forget this site</b> deletes one site's cookies, data and history in one click.</li>
-      <li><b>Reader view</b> in Fjord's own font and colours.</li>
-    </ul>
-  </section>
-
-  <!-- Safari: Fjord's blocking in the browser people already use, from Fjord for iPhone and iPad (not out yet) -->
-  <section id="safari" class="story safari">
-    <article class="chapter">
-      <div class="chapter-text">
-        <h2>Happy with Safari? Keep it.</h2>
-        <p>Fjord for iPhone and iPad brings Fjord Shields to Safari: the same ad and tracker lists Fjord blocks with, working in the browser you already use. Safari applies them itself, so Fjord never sees what you browse there.</p>
-        <p>Turn on Fjord Ads and Fjord Trackers once, in Settings, under Apps, Safari, Extensions.</p>
-        <p class="muted small">Coming with Fjord for iPhone and iPad.</p>
-      </div>
-      <figure class="art"><img src="assets/art/safari.jpg" alt="An old wooden sailboat at a jetty, its owner fitting a new canvas hood over the bow while paper envelopes bounce off it into the water" width="1200" height="1500" loading="lazy"></figure>
-    </article>
-  </section>
-
-  <section id="privacy" class="section-dark">
-    <div class="split">
+    <h2>What's in Fjord</h2>
+    <p class="lead">Everything below is on from the start or one click away. On computers Fjord is Firefox underneath, so Firefox's own features and add-ons work too.</p>
+    <div class="features">
       <div>
-        <h2>See for yourself</h2>
-        <p>“No tracking” is easy to say. Fjord lists every connection it makes on its own, live, and what each one is for: security lists from Mozilla, filter updates for the ad blocker, and nothing about you.</p>
-        <p>There's no Fjord account, no usage data and no ads. Settings, history and passwords stay on your computer.</p>
+        <h3>Protection</h3>
+        <dl>
+          <dt>Ads and trackers blocked</dt><dd>uBlock Origin and Firefox's strict tracking protection, on from the first page you open.</dd>
+          <dt>Shields for each site</dt><dd>Off, Standard, Strict or Lockdown, and which companies the page tried to reach.</dd>
+          <dt>Fake sites stopped</dt><dd>Names made to look like a popular site, like paypa1.com, get a warning and a link to the real one.</dd>
+          <dt>No tracking redirects</dt><dd>Links that pass through Google, Facebook or newsletters go straight to the real site.</dd>
+          <dt>A different fingerprint everywhere</dt><dd>Made-up canvas, WebGL and audio readings, new for every site and every time Fjord starts.</dd>
+          <dt>Clipboard guard</dt><dd>If a page swaps what you copied, like a wallet address, Fjord puts yours back.</dd>
+          <dt>Secure connections</dt><dd>HTTPS only, and Secure DNS through Quad9.</dd>
+          <dt>Safari too, on iPhone</dt><dd>Fjord's ad and tracker lists work in Safari as well, without Fjord seeing what you browse there.</dd>
+        </dl>
       </div>
-      <div class="conn" aria-label="Sample of Fjord's connections list">
-        <div class="conn-head"><b>Fjord's connections</b><em>Sample</em></div>
-        <ul>
-          <li><span class="url">dns.quad9.net</span><span>Secure DNS: finding the sites you open</span></li>
-          <li><span class="url">firefox.settings.services.mozilla.com</span><span>Security lists and blocklists from Mozilla</span></li>
-          <li><span class="url">content-signature-2.cdn.mozilla.net</span><span>Checking those lists are signed by Mozilla</span></li>
-          <li><span class="url">tracking-protection.cdn.mozilla.net</span><span>Firefox's lists of trackers to block</span></li>
-          <li><span class="url">safebrowsing.googleapis.com</span><span>Lists of dangerous sites. Only short fingerprints of addresses are sent</span></li>
-          <li><span class="url">ublockorigin.github.io</span><span>Filter list updates for uBlock Origin</span></li>
-        </ul>
+      <div>
+        <h3>Privacy</h3>
+        <dl>
+          <dt>No telemetry, no account</dt><dd>Nothing about you is sent anywhere. Settings, history and passwords stay on your computer.</dd>
+          <dt>Fjord's connections</dt><dd>A live list of every connection Fjord itself makes, and what each one is for.</dd>
+          <dt>Ghost mode and Mist tabs</dt><dd>Forget everything when Fjord closes, or just in one throwaway tab.</dd>
+          <dt>Forget this site</dt><dd>One site's cookies, data and history, gone in one click.</dd>
+          <dt>App lock</dt><dd>Ask for Windows Hello or Touch ID when Fjord opens, and hide tab titles while it's locked.</dd>
+          <dt>Your own VPN or proxy</dt><dd>With nothing sent outside it if it drops.</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>Everyday</h3>
+        <dl>
+          <dt>Private YouTube player</dt><dd>No recommendations, comments or watch history.</dd>
+          <dt>Hide this</dt><dd>Right-click a cookie wall or sidebar and it's gone on that site.</dd>
+          <dt>Command bar</dt><dd><span class="keys-inline"><kbd>Ctrl</kbd> <kbd>K</kbd></span> for tabs, bookmarks, history and Fjord's actions.</dd>
+          <dt>Link preview</dt><dd>Shift-click a link to read it over the page.</dd>
+          <dt>Workspaces and sidebar apps</dt><dd>Work and home kept apart, and Spotify or WhatsApp a click away.</dd>
+          <dt>Memory saver</dt><dd>Tabs you haven't used for a while are unloaded.</dd>
+          <dt>Tools for designers</dt><dd>Colour picker, font finder, asset saver and full-page screenshots.</dd>
+          <dt>Import</dt><dd>Bookmarks, history and passwords from the browser you use now.</dd>
+        </dl>
       </div>
     </div>
+  </section>
+
+  <!-- How Fjord compares: defaults only, each checked against the browser's own documentation (November 2026) -->
+  <section id="compare" class="section">
+    <h2>How Fjord compares</h2>
+    <p class="lead">Out of the box, without changing any settings.</p>
+    <div class="table-wrap">
+      <table class="compare">
+        <thead>
+          <tr><th scope="col"><span class="visually-hidden">Feature</span></th><th scope="col" class="us">Fjord</th><th scope="col">Firefox</th><th scope="col">LibreWolf</th><th scope="col">Brave</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Built on</th><td data-browser="Fjord" class="us">Firefox, Mozilla's own build</td><td data-browser="Firefox">Firefox</td><td data-browser="LibreWolf">Firefox, rebuilt from source</td><td data-browser="Brave">Chromium</td></tr>
+          <tr><th scope="row">Blocks ads</th><td data-browser="Fjord" class="us yes">Yes, uBlock Origin</td><td data-browser="Firefox" class="no">No, trackers only</td><td data-browser="LibreWolf" class="yes">Yes, uBlock Origin</td><td data-browser="Brave" class="yes">Yes, Brave Shields</td></tr>
+          <tr><th scope="row">Usage data sent home</th><td data-browser="Fjord" class="us yes">None</td><td data-browser="Firefox" class="no">On by default</td><td data-browser="LibreWolf" class="yes">None</td><td data-browser="Brave" class="no">On by default</td></tr>
+          <tr><th scope="row">Fingerprinting</th><td data-browser="Fjord" class="us">Made up, different on every site</td><td data-browser="Firefox">Known fingerprinters blocked</td><td data-browser="LibreWolf">Looks like other LibreWolf users</td><td data-browser="Brave">Made up, different on every site</td></tr>
+          <tr><th scope="row">Firefox security fixes</th><td data-browser="Fjord" class="us">The day Mozilla ships them</td><td data-browser="Firefox">The day they ship</td><td data-browser="LibreWolf">Once each release is rebuilt</td><td data-browser="Brave">Follows Chromium's</td></tr>
+          <tr><th scope="row">Crypto wallet and rewards</th><td data-browser="Fjord" class="us">No</td><td data-browser="Firefox">No</td><td data-browser="LibreWolf">No</td><td data-browser="Brave">Built in</td></tr>
+          <tr><th scope="row">Extensions</th><td data-browser="Fjord" class="us">Firefox add-ons</td><td data-browser="Firefox">Firefox add-ons</td><td data-browser="LibreWolf">Firefox add-ons</td><td data-browser="Brave">Chrome Web Store</td></tr>
+          <tr><th scope="row">Phones</th><td data-browser="Fjord" class="us">iPhone and iPad</td><td data-browser="Firefox">Android, iPhone</td><td data-browser="LibreWolf">No</td><td data-browser="Brave">Android, iPhone</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted small note">Defaults can change; tell us <a href="https://github.com/Elias-Mathisen/fjord/issues">on GitHub</a> if one here is out of date. Usage data: Firefox's telemetry and Brave's privacy-preserving product analytics, both of which you can turn off.</p>
   </section>
 
   <section id="download" class="section">
@@ -213,10 +129,11 @@
         <div class="spec"><a class="btn" href="https://github.com/Elias-Mathisen/fjord/releases/latest/download/Fjord-x86_64.AppImage">Download for Linux</a>
           <a class="muted small" href="https://github.com/Elias-Mathisen/fjord/releases/latest/download/Fjord-aarch64.AppImage">For ARM computers</a></div>
       </div>
-      <div class="row soon">
+      <div class="row">
         <h3>iPhone and iPad</h3>
-        <p>Fjord's blocking, fake-site warnings and private YouTube player, with Fjord Shields for Safari.</p>
-        <div class="spec"><span class="muted">Coming soon</span></div>
+        <p>iOS 17 and later. Fjord's blocking, fake-site warnings and private YouTube player, and its blocking in Safari too.</p>
+        <!-- shortcut: placeholder until Fjord is listed; put the App Store link here before the site goes live -->
+        <div class="spec"><a class="btn" href="#app-store-link">Get it on the App Store</a></div>
       </div>
     </div>
     <p class="muted small note">Windows may say it doesn't recognise the app yet. Choose “More info”, then “Run anyway”. The installer downloads Firefox straight from Mozilla and checks Mozilla's signature before installing.<br><br>The first time you open Fjord on a Mac, macOS says it can't check it. Open System Settings, then Privacy &amp; Security, and choose “Open Anyway”.<br><br>On Linux, if the download doesn't open, right-click it, choose Properties and allow it to run as a program.</p>
@@ -230,11 +147,11 @@
     </details>
     <details>
       <summary>Is it Firefox?</summary>
-      <p>Underneath, yes: Fjord installs the official Firefox from Mozilla and sets it up with its own settings, look and features. That's why it gets Firefox's security fixes as soon as they're out. Fjord isn't made or endorsed by Mozilla.</p>
+      <p>On computers, yes: Fjord installs the official Firefox from Mozilla and sets it up with its own settings, look and features. That's why it gets Firefox's security fixes as soon as they're out. On iPhone and iPad, Apple has every browser use Safari's engine, so Fjord does too, with the same protections on top. Fjord isn't made or endorsed by Mozilla.</p>
     </details>
     <details>
-      <summary>How is it different from other private browsers?</summary>
-      <p>Some private browsers are strict but fiddly to set up; others are easy to use but send data home. Fjord is built on Firefox, sends nothing home, and works out of the box, with Shields and a clear setup. On top, it warns you about fake sites and clipboard swaps, shows its own connections, and has tools for designers.</p>
+      <summary>What does Fjord connect to on its own?</summary>
+      <p>Only what it needs to work: Firefox and its security lists from Mozilla, filter updates for uBlock Origin, Secure DNS through Quad9, and new versions of Fjord from GitHub. Settings lists every connection live, with what it's for.</p>
     </details>
     <details>
       <summary>Will sites break?</summary>
@@ -274,6 +191,6 @@
 
 <script src="assets/vendor/gsap.min.js"></script>
 <script src="assets/vendor/ScrollTrigger.min.js"></script>
-<script src="main.js"></script>
+<script src="main.js?v=3"></script>
 </body>
 </html>
