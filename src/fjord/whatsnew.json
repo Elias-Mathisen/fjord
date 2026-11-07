@@ -1,4 +1,8 @@
 {
+  "2.0.0": [
+    "Split view: two tabs side by side. Right-click a tab or a link, or press Ctrl+K (⌘K on a Mac) and choose Split view. A split works across Spaces and keeps its two tabs together.",
+    "Memory saver shows what it freed: Settings › Performance says how many tabs are asleep and about how much memory that saved, and so does a sleeping tab when you hover over it."
+  ],
   "1.0.8": [
     "Sync with your iPhone: scan a QR code in Settings with Fjord for iPhone, and your history, bookmarks and open tabs go both ways over your home Wi-Fi. Nothing goes through the internet.",
     "Spaces: separate sets of tabs like Work and Personal, each with its own colour. The button at the start of the tabs switches between them.",
