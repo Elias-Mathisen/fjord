@@ -23,6 +23,7 @@ follow every Firefox security update the day it ships.
   and never sent anywhere (also on iPhone)
 - **Fjord's connections**: a live list of every connection Fjord itself makes
 - **Spaces**: separate sets of tabs like Work and Personal, each with its own colour and sign-ins
+- **Split view**: two tabs side by side, from a tab's right-click menu, a link's, or the command bar
 - Sidebar apps (Spotify, WhatsApp…), Memory saver, design tools (colour picker, font finder, asset saver,
   full-page screenshots)
 - A new tab with 100 hand-picked Unsplash photos and privacy stats, reader view in Fjord's font, and a ski jump game

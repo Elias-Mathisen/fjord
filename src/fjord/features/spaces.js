@@ -30,6 +30,8 @@
   let current = prefs.getStringPref(CURRENT, "personal");
   const currentWs = () => list().find(w => w.id === current) ?? list()[0];
   const owner = tab => list().find(w => w.userContextId === tab.userContextId); // undefined: shows in every space
+  // Whether a tab shows in a space. The tabs of a split view stay together: in every space any of them belongs to.
+  const here = (tab, ws = currentWs()) => (tab.splitview?.tabs ?? [tab]).some(t => t.pinned || !owner(t) || owner(t).id === ws.id);
   // Spaces from before 2.0 have no colour of their own; their container's
   const colorName = ws => ws.color ?? (ws.userContextId ? ContextualIdentityService.getPublicIdentityFromId(ws.userContextId)?.color : null);
   const colorOf = ws => COLORS[colorName(ws)] ?? GREY;
@@ -39,8 +41,7 @@
   function apply() {
     const ws = currentWs();
     for (const tab of gBrowser.tabs) {
-      const o = owner(tab);
-      if (!enabled() || tab.pinned || !o || o.id === ws.id) gBrowser.showTab(tab);
+      if (!enabled() || here(tab, ws)) gBrowser.showTab(tab);
       else if (!tab.selected) gBrowser.hideTab(tab);
     }
   }
@@ -49,8 +50,7 @@
     current = id;
     prefs.setStringPref(CURRENT, id);
     const ws = currentWs();
-    const sel = gBrowser.selectedTab, o = owner(sel);
-    if (o && o.id !== ws.id && !sel.pinned) {
+    if (!here(gBrowser.selectedTab, ws)) {
       // Go to one of this space's tabs, or open a new one in it
       const tab = gBrowser.tabs.find(t => !t.pinned && owner(t)?.id === ws.id);
       gBrowser.selectedTab = tab ?? gBrowser.addTab(BROWSER_NEW_TAB_URL, { userContextId: ws.userContextId, triggeringPrincipal: system() });
@@ -133,15 +133,15 @@
   }
   // A tab from another space that opens in the background is tucked away; selecting one switches space
   gBrowser.tabContainer.addEventListener("TabOpen", e => setTimeout(() => {
-    const o = owner(e.target);
-    if (enabled() && !e.target.selected && !e.target.pinned && o && o.id !== currentWs().id) gBrowser.hideTab(e.target);
+    if (enabled() && !e.target.selected && !here(e.target)) gBrowser.hideTab(e.target);
     changed();
   }, 0));
   gBrowser.tabContainer.addEventListener("TabSelect", e => {
-    const o = owner(e.target);
-    if (enabled() && !e.target.pinned && o && o.id !== currentWs().id) switchTo(o.id);
+    if (enabled() && !here(e.target)) switchTo(owner(e.target).id);
   });
   gBrowser.tabContainer.addEventListener("TabClose", () => setTimeout(changed, 0));
+  // Making or undoing a split view can bring a tab from another space into this one, or send it back
+  for (const type of ["SplitViewTabChange", "SplitViewRemoved"]) gBrowser.tabContainer.addEventListener(type, () => setTimeout(apply, 0));
 
   // ---------- The button at the start of the tabs: the space's colour and name ----------
   try {

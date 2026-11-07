@@ -30,6 +30,9 @@
           label: `Shields ${name} on ${site}`, keys: `protection level dial block ${desc}`, run: () => s.setLevel(level) })),
         { label: `Hide part of ${site}…`, keys: "remove cookie banner popup element distraction sidebar", run: () => Fjord.hidePicker() },
       ] : []),
+      gBrowser.selectedTab.splitview
+        ? { label: "Undo split view", keys: "side by side separate unsplit close", run: command("Browser:SeparateTabSplitView") }
+        : { label: "Split view", keys: "side by side two tabs", run: command("Browser:AddTabSplitView") },
       { label: "Reader view", keys: "read article text", run: command("View:ReaderView") },
       { label: "Picture-in-picture", keys: "video float pip", run: command("View:PictureInPicture") },
       { label: "Bookmark this page", keys: "save star favourite", run: command("Browser:AddBookmarkAs") },
