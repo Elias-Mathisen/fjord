@@ -1,0 +1,30 @@
+/* Split view's tab picker (Firefox's about:opentabs) in Fjord's greys instead of Firefox's purple, the same colours as
+   chrome.css. page-frame.js adds it to the page and inside its splitview-opentabs element.
+   shortcut: targets Firefox 159's opentabs-splitview.css names; re-check after major Firefox updates. */
+@font-face {
+  font-family: "Geist";
+  src: url("resource://fjord/fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+}
+:root, :host {
+  --n-bg: #1e1e20;
+  --n-surface: #2b2b2e;
+  --n-line: #3d3d40;
+  --n-text: #ededed;
+  --n-muted: #a1a1a6;
+  font-family: "Geist", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: light) {
+  :root, :host {
+    --n-bg: #f0f0f0;
+    --n-surface: #ffffff;
+    --n-line: #d8d8d8;
+    --n-text: #1d1d1f;
+    --n-muted: #6e6e73;
+  }
+}
+:root { background: var(--n-bg) !important; color: var(--n-text); }
+.sticky-header { background: linear-gradient(to bottom, var(--n-bg) 85%, transparent) !important; }
+.sticky-header h3 { color: var(--n-text) !important; font-weight: 600 !important; letter-spacing: -0.01em; }
+moz-card { --card-background-color: var(--n-surface); --card-border-color: var(--n-line); background-color: var(--n-surface); }
+moz-input-search { --input-background-color: var(--n-surface); --input-border-color: var(--n-line); --focus-outline-color: var(--n-text); }

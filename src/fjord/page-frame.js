@@ -15,6 +15,14 @@
       ChromeUtils.importESModule("resource://fjord/offline.sys.mjs").addFjordFont(win);
       return;
     }
+    // Split view's tab picker in Fjord's colours (opentabs.css): on the page, and inside its element, whose styles
+    // are its own. Put first in the element, ahead of what it draws itself, so redrawing leaves it.
+    if (win && doc.documentURI === "about:opentabs") {
+      const sheet = () => Object.assign(doc.createElement("link"), { rel: "stylesheet", href: "resource://fjord/opentabs.css" });
+      doc.head.append(sheet());
+      win.customElements.whenDefined("splitview-opentabs").then(() => doc.querySelector("splitview-opentabs")?.shadowRoot?.prepend(sheet()));
+      return;
+    }
     const code = /^about:neterror\?e=(\w+)/.exec(doc.documentURI)?.[1];
     if (!win || win.browsingContext?.parent || !code || !doc.body) return; // the tab's page, not a frame in it
     if (code !== "netOffline" && !(["dnsNotFound", "netTimeout", "connectionFailure", "netReset"].includes(code) && !win.navigator.onLine)) return;

@@ -791,3 +791,6 @@
   .ns-swatch { width: 18px; height: 18px; padding: 0; border: 2px solid transparent; border-radius: 50%;
     background: var(--c) content-box; cursor: pointer; }
   .ns-swatch[aria-checked="true"] { border-color: var(--n-text); }
+
+  /* A sleeping tab's preview card: asleep, and about how much memory it freed (features/memory.js) */
+  .ns-asleep-note { color: var(--n-muted); font-size: 0.9em; margin-top: 4px; }
