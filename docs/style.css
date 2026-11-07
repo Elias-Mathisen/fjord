@@ -92,16 +92,25 @@ p { margin: 0; text-wrap: pretty; }
 .compare .no::before { content: "×"; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* Download: one row per platform */
-.rows { margin-top: clamp(40px, 6vw, 64px); border-bottom: 1px solid var(--line); }
-.row { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px 48px; align-items: baseline; padding: 34px 0; border-top: 1px solid var(--line); }
-.row h3 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
-.row > p { color: var(--muted); max-width: 52ch; }
-.spec { display: grid; gap: 6px; justify-items: start; margin: 0; }
 kbd { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 6px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 2px 0 var(--line); font: 13px/1.6 var(--mono); text-align: center; }
-/* Download */
-.platforms .row { align-items: center; }
+/* Download: a card per platform, side by side; the visitor's own (main.js) is the dark one */
+.platforms { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: clamp(40px, 6vw, 64px); }
+.platform { display: flex; flex-direction: column; padding: 28px; border-radius: var(--radius); background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.os-logo { width: 36px; height: 36px; margin-bottom: 44px; fill: currentColor; }
+.platform h3 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+.platform p { margin: 8px 0 28px; color: var(--muted); font-size: 15px; }
+.platform .btn { margin-top: auto; }
+.platform.yours { background: var(--dark); color: #ededed; box-shadow: none; }
+.platform.yours p { color: var(--dark-muted); }
+.platform.yours .btn { background: #fff; color: var(--text); }
+@media (hover: hover) { .platform.yours .btn:hover { background: #e5e5e5; } }
+.platforms-updates { margin-top: 20px; }
 .note { max-width: 620px; margin-top: 24px; }
+@media (max-width: 1020px) { .platforms { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) {
+  .platforms { grid-template-columns: 1fr; }
+  .os-logo { width: 30px; height: 30px; margin-bottom: 24px; }
+}
 
 /* Questions */
 .faq { max-width: 760px; padding-bottom: 24px; }
@@ -130,9 +139,7 @@ kbd { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 6
   .nav nav { display: none; }
   .nav .btn { margin-inline-start: auto; }
   .hero { padding-top: 120px; }
-  .row, .features { grid-template-columns: 1fr; }
-  .row { gap: 10px; padding: 28px 0; }
-  .spec { margin-top: 6px; }
+  .features { grid-template-columns: 1fr; }
 }
 /* On phones each row of the comparison stacks: the feature, then a line per browser with Fjord's picked out */
 @media (max-width: 640px) {

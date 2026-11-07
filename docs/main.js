@@ -1,6 +1,21 @@
 // Fjord's website: smooth scrolling to its sections, the nav over the hero, the questions opening smoothly, and the
 // dawn footer
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// ---------- Get Fjord: the visitor's own device is the highlighted card, and the hero's button is for it ----------
+// First, so it still works if the animation library doesn't load. iPads ask for the desktop site, so they say Macintosh; touch gives them away
+const ua = navigator.userAgent;
+const os = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? "iphone"
+  : /Macintosh/.test(ua) ? "mac" : /Windows/.test(ua) ? "windows" : /Linux/.test(ua) && !/Android/.test(ua) ? "linux" : null;
+const yours = os && document.querySelector(`.platform[data-os="${os}"]`);
+if (yours) {
+  yours.classList.add("yours");
+  const card = yours.querySelector(".btn"), hero = document.querySelector(".hero-actions .btn");
+  hero.href = card.href;
+  hero.textContent = os === "iphone" ? "Get it on the App Store" : card.getAttribute("aria-label");
+  if (os !== "windows") document.querySelector(".hero-actions .muted").innerHTML = 'Free · <a href="#download">Every platform</a>';
+}
+
 gsap.registerPlugin(ScrollTrigger);
 document.fonts.ready.then(() => ScrollTrigger.refresh());
 
