@@ -251,6 +251,9 @@ if [ "$OS" = Darwin ]; then
   plutil -replace CFBundleIdentifier -string io.github.eliasmathisen.fjord "$P"
   plutil -replace CFBundleIconFile -string fjord.icns "$P"
   plutil -remove CFBundleIconName "$P" 2>/dev/null || true
+  # macOS 27 keeps the icon it pulses while an app starts per build number, and Firefox's number doesn't change between
+  # Fjord builds, so a Firefox icon cached from an early build kept showing. A number of its own per build makes it look again
+  plutil -replace CFBundleVersion -string "$(date -u +%Y%m%d%H%M)" "$P"
   # macOS takes the name from these over Info.plist (the "change your default web browser?" question, Activity Monitor)
   find "$stage" -name InfoPlist.strings | while read -r f; do
     plutil -convert xml1 "$f" && sed -i '' 's/Firefox/Fjord/g' "$f"
