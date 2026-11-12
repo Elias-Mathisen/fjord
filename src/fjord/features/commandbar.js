@@ -30,6 +30,16 @@
           label: `Shields ${name} on ${site}`, keys: `protection level dial block ${desc}`, run: () => s.setLevel(level) })),
         { label: `Hide part of ${site}…`, keys: "remove cookie banner popup element distraction sidebar", run: () => Fjord.hidePicker() },
       ] : []),
+      // Firefox's tab groups: folders in the tab bar that fold away with a click on their name
+      { label: "Add tab to new group", keys: "folder tab group collapse fold organise organize",
+        // As Firefox's own tab menu does it, then the box to name it and pick its colour
+        run: () => {
+          const tab = gBrowser.selectedTab;
+          if (tab.pinned) return;
+          const group = gBrowser.addTabGroup([tab], { insertBefore: tab.group ?? tab.splitview ?? tab,
+            metricsContext: gBrowser.TabMetrics.userTriggeredContext(gBrowser.TabMetrics.METRIC_SOURCE.TAB_MENU) });
+          if (group && !group.label) gBrowser.tabGroupMenu.openCreateModal(group);
+        } },
       gBrowser.selectedTab.splitview
         ? { label: "Undo split view", keys: "side by side separate unsplit close", run: command("Browser:SeparateTabSplitView") }
         : { label: "Split view", keys: "side by side two tabs", run: command("Browser:AddTabSplitView") },

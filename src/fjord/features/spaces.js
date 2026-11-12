@@ -44,6 +44,8 @@
       if (!enabled() || here(tab, ws)) gBrowser.showTab(tab);
       else if (!tab.selected) gBrowser.hideTab(tab);
     }
+    // A tab folder (Firefox's tab groups) shows in the spaces its tabs are in, not as an empty label elsewhere
+    for (const group of gBrowser.tabGroups ?? []) group.hidden = group.tabs.every(t => t.hidden);
   }
 
   function switchTo(id) {

@@ -798,3 +798,56 @@
   /* Settings > Calm web: what it takes out */
   .ns-calm-list { margin: 0 0 12px; padding-inline-start: 20px; display: grid; gap: 6px; color: var(--n-muted); }
   .ns-calm-list b { color: var(--n-text); font-weight: 600; }
+
+  /* Tab folders (Firefox's tab groups): a quiet label with the folder's colour as a dot and an arrow that turns as
+     it folds, a soft wash of the colour while it's folded, and a lighter line under its tabs.
+     shortcut: targets Firefox 160's tab-group names; re-check after major Firefox updates. */
+  tab-group .tab-group-label {
+    background: transparent !important;
+    color: var(--n-text) !important;
+    border-radius: 8px !important;
+    min-height: 26px;
+    padding: 0 10px 0 8px !important;
+    display: flex !important;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.005em;
+    box-shadow: inset 0 0 0 1px var(--n-line);
+    transition: background-color 0.15s, box-shadow 0.15s;
+  }
+  tab-group .tab-group-label::before {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--tab-group-color);
+  }
+  tab-group .tab-group-label::after {
+    content: "";
+    flex: none;
+    width: 5px;
+    height: 5px;
+    margin: 0 1px 2px 1px;
+    border-right: 1.5px solid var(--n-muted);
+    border-bottom: 1.5px solid var(--n-muted);
+    transform: rotate(45deg);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), margin 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  tab-group[collapsed] .tab-group-label {
+    background: color-mix(in srgb, var(--tab-group-color) 18%, transparent) !important;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tab-group-color) 40%, transparent);
+  }
+  tab-group[collapsed] .tab-group-label::after { transform: rotate(-45deg); margin: 0 2px 0 0; }
+  @media (hover: hover) {
+    tab-group .tab-group-label:hover { background: var(--n-hover) !important; }
+    tab-group[collapsed] .tab-group-label:hover { background: color-mix(in srgb, var(--tab-group-color) 26%, transparent) !important; }
+  }
+  tab-group .tab-group-label-hover-highlight { background: transparent !important; box-shadow: none !important; }
+  tab-group .tab-group-line { background-color: color-mix(in srgb, var(--tab-group-color) 55%, transparent) !important; border-radius: 2px; }
+  tab-group .tab-group-overflow-count { color: var(--n-muted) !important; font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) {
+    tab-group .tab-group-label::after { transition: none; }
+  }
