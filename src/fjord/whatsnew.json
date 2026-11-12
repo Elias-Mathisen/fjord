@@ -1,4 +1,13 @@
 {
+  "3.0.0": [
+    "Calm web: besides ads and trackers, Fjord now takes out what pages use to pressure you: fake urgency like “Only 2 left”, countdowns next to offers, guilt-trip buttons, email and chat pop-ups, and videos that play on their own. Turn it off for one site in Shields, or everywhere in Settings › Calm web.",
+    "Sync through a folder you already have, like iCloud Drive, Dropbox, OneDrive or a USB stick, not just over your home Wi-Fi. Each device writes its own encrypted file, so the folder only ever holds scrambled data. Passwords and settings now sync between your computers too. Still no account and no server.",
+    "New tab: a picture of your own instead of the landscapes, in Settings › New tab.",
+    "Tab folders in Fjord's look, and they work with Spaces.",
+    "A new first-time setup, and redesigned Settings where every section scrolls all the way down.",
+    "Fjord is called Fjord, not Firefox, when you make it your default browser, and starts without Firefox's loading screen.",
+    "The Mozilla account sign-in is gone from the menu: Fjord doesn't send your data anywhere."
+  ],
   "2.0.0": [
     "Split view: two tabs side by side. Right-click a tab or a link, or press Ctrl+K (⌘K on a Mac) and choose Split view. A split works across Spaces and keeps its two tabs together.",
     "Memory saver shows what it freed: Settings › Performance says how many tabs are asleep and about how much memory that saved, and so does a sleeping tab when you hover over it."
