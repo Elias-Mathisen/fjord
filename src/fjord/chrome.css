@@ -152,7 +152,7 @@
   @keyframes ns-fade { from { opacity: 0; } }
   @keyframes ns-rise { from { opacity: 0; transform: translateY(8px) scale(0.99); } }
   @keyframes ns-in { from { opacity: 0; transform: translateY(6px); } }
-  @media (prefers-reduced-motion: reduce) { .ns-overlay, .ns-card, .ns-body, .ns-pane > * { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .ns-overlay, .ns-card, .ns-body, .ns-pane-body > * { animation: none !important; } }
 
   .ns-overlay :is(h1, h2, h3, p, ul) { margin: 0; }
   .ns-overlay h1 { margin: 6px 0 8px; font-size: 30px; font-weight: 650; letter-spacing: -0.025em; }
@@ -166,15 +166,6 @@
   .ns-overlay button { cursor: pointer; transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s; }
   .ns-overlay :is(button, input):focus-visible { outline: 2px solid var(--n-accent); outline-offset: 2px; }
 
-  /* Illustrations: the fjord at dawn in light mode, at night in dark mode */
-  .ns-scene { position: relative; overflow: hidden; }
-  /* Muted to near-grey so the art sits in the white-and-grey look */
-  .ns-scene > :is(.ns-scene-light, .ns-scene-dark) { display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(0.15); }
-  .ns-scene-light { display: none !important; }
-  @media (prefers-color-scheme: light) {
-    .ns-scene-light { display: block !important; }
-    .ns-scene-dark { display: none !important; }
-  }
   .ns-icon { width: 18px; height: 18px; -moz-context-properties: stroke; stroke: currentColor; }
   /* Section badges: a white icon on its own colour, like an app icon */
   .ns-badge {
@@ -405,16 +396,24 @@
   .ns-kinds input { appearance: auto !important; width: 16px; height: 16px; accent-color: var(--n-accent); }
   .ns-row { display: flex; align-items: center; gap: 12px; }
 
-  /* Settings */
+  /* Settings: the size of setup; sections in groups down the left, the open one scrolling under a header that
+     stays put and casts a shadow once there's something under it. Light mode puts white cards on light grey, dark mode lighter cards on the card */
   .ns-settings {
+    --pane-bg: var(--n-surface);
     display: grid;
-    grid-template-columns: 236px 1fr;
-    width: min(980px, calc(100vw - 32px));
-    height: min(680px, calc(100vh - 48px));
+    grid-template-columns: 264px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    width: min(1160px, calc(100vw - 80px));
+    height: min(760px, calc(100vh - 72px));
     overflow: hidden;
   }
-  .ns-side { display: flex; flex-direction: column; gap: 14px; padding: 20px 14px; background: var(--n-bg); border-inline-end: 1px solid var(--n-line); }
+  @media (prefers-color-scheme: light) {
+    .ns-settings { --pane-bg: var(--n-bg); }
+    .ns-settings .ns-side { background: var(--n-surface); }
+  }
+  .ns-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 18px 12px 0; background: var(--n-bg); border-inline-end: 1px solid var(--n-line); }
   .ns-find {
+    flex-shrink: 0;
     padding: 9px 12px 9px 34px;
     border: 1px solid var(--n-line);
     border-radius: 10px;
@@ -422,41 +421,78 @@
     -moz-context-properties: fill;
     fill: var(--n-muted);
   }
-  .ns-find:focus { border-color: var(--n-accent); outline: none; box-shadow: 0 0 0 3px var(--n-accent-soft); }
-  .ns-nav { display: flex; flex-direction: column; gap: 2px; }
+  .ns-overlay .ns-find:focus { border-color: var(--n-accent); outline: none; box-shadow: 0 0 0 3px var(--n-accent-soft); }
+  .ns-nav { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; margin-inline: -6px; padding: 0 6px 14px; scrollbar-width: thin; }
+  .ns-nav-group { margin: 16px 10px 5px; color: var(--n-muted); font-size: 12px; font-weight: 600; }
+  .ns-nav > [hidden] { display: none; }
   .ns-nav > button {
     display: flex;
+    flex-shrink: 0;
     align-items: center;
-    gap: 11px;
-    padding: 7px 10px 7px 7px;
+    gap: 10px;
+    min-height: 36px;
+    padding: 4px 10px 4px 5px;
     border: none;
-    border-radius: 10px;
+    border-radius: 9px;
     background: transparent;
     text-align: start;
     color: var(--n-text);
   }
   .ns-nav > button:hover { background: var(--n-hover); }
-  .ns-nav > button[aria-current] { background: var(--n-accent-soft); font-weight: 600; }
-  .ns-nav > button[hidden] { display: none; }
-  .ns-pane { overflow: auto; padding: 30px 40px 40px; }
-  .ns-pane > * { animation: ns-in 0.2s ease-out; }
-  .ns-head { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; padding-inline-end: 32px; }
-  .ns-head p { margin: 4px 0 0; }
-  .ns-pane > .ns-secondary { margin-top: 18px; }
+  .ns-nav > button[aria-current] { background: var(--n-accent); color: var(--n-on-accent) !important; font-weight: 600; }
+  .ns-nav > button[aria-current] .ns-badge { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-on-accent) 22%, transparent); }
+  .ns-nav .ns-badge { width: 26px; height: 26px; border-radius: 7px; }
+  .ns-nav .ns-badge .ns-icon { width: 16px; height: 16px; }
+
+  .ns-pane { --gutter: max(44px, calc((100% - 720px) / 2)); position: relative; min-height: 0; overflow-y: auto; background: var(--pane-bg); }
+  .ns-settings .ns-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0;
+    padding: 34px max(var(--gutter), 72px) 20px var(--gutter);
+    background: var(--pane-bg);
+    transition: background-color 0.2s, box-shadow 0.2s;
+  }
+  .ns-pane[scrolled] .ns-head { box-shadow: 0 1px 0 var(--n-line), 0 8px 24px -12px rgb(0 0 0 / 0.35); }
+  .ns-settings .ns-head h2 { font-size: 28px; line-height: 1.1; letter-spacing: -0.025em; }
+  .ns-settings .ns-head p { margin: 5px 0 0; max-width: 62ch; }
+  .ns-pane-body { padding: 0 var(--gutter) 56px; }
+  .ns-pane-body > * { animation: ns-in 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
+  .ns-pane-body > .ns-secondary { margin-top: 18px; }
+  .ns-settings h3 { margin: 34px 0 12px; font-size: 15px; font-weight: 600; letter-spacing: -0.005em; text-transform: none; color: var(--n-text); }
+  .ns-pane-body > h3:first-child { margin-top: 6px; }
+  .ns-settings .ns-group { border: none; background: var(--n-raised); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-line) 65%, transparent); }
+  .ns-settings .ns-group > * { padding-inline: 20px; }
+  .ns-settings .ns-group > :not(:last-child) { border-bottom-color: color-mix(in srgb, var(--n-line) 75%, transparent); }
+  .ns-settings :is(.ns-switch-row, .ns-list-row) { min-height: 58px; }
+  .ns-settings .ns-switch-row { padding-block: 15px; }
+  .ns-settings .ns-list-row > span.ns-quiet:first-child { flex: 1; }
+  .ns-group .ns-secondary { border-color: transparent; background: color-mix(in srgb, var(--n-text) 9%, transparent); }
+  .ns-group .ns-secondary:hover { background: color-mix(in srgb, var(--n-text) 14%, transparent); }
   .ns-close {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: 30px;
+    right: 26px;
+    z-index: 3;
     display: grid;
     place-items: center;
     width: 32px;
     height: 32px;
     border: none;
-    border-radius: 8px;
-    background: transparent;
+    border-radius: 50%;
+    background: var(--n-hover);
   }
-  .ns-close:hover { background: var(--n-hover); }
-  .ns-close img { width: 16px; height: 16px; -moz-context-properties: fill; fill: currentColor; }
+  .ns-close:hover { background: color-mix(in srgb, var(--n-text) 14%, transparent); }
+  .ns-close img { width: 14px; height: 14px; -moz-context-properties: fill; fill: currentColor; }
+  @media (max-width: 860px) {
+    .ns-settings { grid-template-columns: 210px minmax(0, 1fr); width: calc(100vw - 24px); }
+    .ns-pane { --gutter: 28px; }
+  }
+  @media (max-height: 620px) { .ns-settings { height: calc(100vh - 24px); } }
 
   /* Cards of rows, like grouped lists */
   .ns-group { border: 1px solid var(--n-line); border-radius: 14px; background: var(--n-raised); overflow: hidden; }
@@ -613,40 +649,49 @@
   .ns-add-site :is(input, select) { box-sizing: border-box; min-width: 0; }
   .ns-ip-check { margin-top: 16px; }
 
-  /* Overview */
-  .ns-banner { position: relative; height: 180px; margin: 18px 0 16px; border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 1px var(--n-line); }
-  .ns-banner-art { position: absolute; inset: 0; }
-  .ns-banner-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(0 0 0 / 0.55), transparent 70%); }
-  .ns-banner-text { position: absolute; left: 26px; bottom: 22px; display: grid; gap: 2px; color: #fff; text-shadow: 0 1px 12px rgb(0 0 0 / 0.35); }
-  .ns-banner-text b { font-size: 40px; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1.05; }
-  .ns-banner-text span { font-size: 14px; opacity: 0.9; }
+  /* Overview: the setup drawing with the blocked count on it, then a card per section */
+  .ns-banner { position: relative; height: 220px; margin: 0 0 14px; border-radius: 18px; overflow: hidden; background: var(--n-raised);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-line) 65%, transparent); }
+  .ns-banner > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 64%;
+    filter: invert(1); mix-blend-mode: screen; opacity: 0.75; }
+  @media (prefers-color-scheme: light) { .ns-banner > img { filter: none; mix-blend-mode: multiply; opacity: 1; } }
+  .ns-banner::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, var(--n-raised) 0%, color-mix(in srgb, var(--n-raised) 75%, transparent) 30%, transparent 65%); }
+  .ns-banner-text { position: absolute; z-index: 1; left: 28px; bottom: 24px; display: grid; gap: 4px; }
+  .ns-banner-text b { font-size: 46px; font-weight: 650; letter-spacing: -0.035em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .ns-banner-text span { color: var(--n-muted); font-size: 14px; }
   .ns-callout {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 16px;
-    padding: 14px 16px 14px 18px;
+    margin-bottom: 14px;
+    padding: 14px 16px 14px 20px;
     border-radius: 14px;
     background: var(--n-accent-soft);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-accent) 35%, transparent);
   }
   .ns-callout > span { flex: 1; display: grid; gap: 2px; }
   .ns-callout > span span { color: var(--n-muted); font-size: 13px; }
-  .ns-home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ns-home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .ns-home-card {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 14px;
     padding: 16px;
-    border: 1px solid var(--n-line);
+    border: none;
     border-radius: 14px;
     background: var(--n-raised);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-line) 65%, transparent);
     text-align: start;
+    transition: box-shadow 0.15s, transform 0.12s;
   }
-  .ns-home-card:hover { border-color: color-mix(in srgb, var(--n-accent) 45%, var(--n-line)); }
-  .ns-home-card .ns-badge { width: 36px; height: 36px; border-radius: 10px; }
-  .ns-home-card > span:last-child { display: grid; gap: 2px; }
-  .ns-home-card > span:last-child span { color: var(--n-muted); font-size: 13px; }
+  .ns-home-card:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-accent) 45%, var(--n-line)); }
+  .ns-home-card:active { transform: scale(0.985); }
+  .ns-home-card .ns-badge { width: 38px; height: 38px; border-radius: 10px; }
+  .ns-home-card > span:nth-child(2) { display: grid; gap: 2px; }
+  .ns-home-card > span:nth-child(2) span { color: var(--n-muted); font-size: 13px; }
+  .ns-home-card > .ns-icon { width: 16px; height: 16px; transform: scaleX(-1); stroke: var(--n-muted); }
 
   .ns-about { display: flex; align-items: center; gap: 16px; margin: 18px 0; }
   .ns-about img { width: 56px; height: 56px; border-radius: 13px; }

@@ -182,10 +182,6 @@
   // ---------- Pieces shared by setup and settings ----------
   const icon = name => h("img", { class: "ns-icon", src: `${ART}icons/${name}.svg`, alt: "" });
   const badge = (key, cls = "") => h("span", { class: `ns-badge ns-b-${key} ${cls}` }, icon(key));
-  // The fjord banner, at dawn or at night to match the theme
-  const scene = cls => h("div", { class: `ns-scene ${cls}` },
-    h("img", { class: "ns-scene-light", src: `${ART}fjord-dawn.svg`, alt: "" }),
-    h("img", { class: "ns-scene-dark", src: `${ART}fjord-night.svg`, alt: "" }));
 
   // A row of buttons where one is picked
   const choices = (cls, items, current, onPick) => {
@@ -716,11 +712,11 @@
       const theme = THEMES.find(t => t.value === prefs.getStringPref("fjord.theme", "dark")) ?? THEMES[0];
       const dns = DNS.find(d => d.value === currentDNS()) ?? DNS[1];
       const card = (key, title, sub) => on(h("button", { class: "ns-home-card" }, badge(key),
-        h("span", {}, h("b", {}, title), h("span", {}, sub))), "click", () => open(key));
+        h("span", {}, h("b", {}, title), h("span", {}, sub)), icon("chevron")), "click", () => open(key));
       let isDefault = true;
       try { isDefault = window.ShellService.isDefaultBrowser(false, false); } catch {}
       return [
-        h("div", { class: "ns-banner" }, scene("ns-banner-art"),
+        h("div", { class: "ns-banner" }, h("img", { src: `${ART}setup-wide-cabin.jpg`, alt: "" }),
           h("div", { class: "ns-banner-text" }, h("b", {}, (etp + ubo).toLocaleString()), h("span", {}, "ads and trackers blocked so far"))),
         isDefault ? null : h("div", { class: "ns-callout" },
           h("span", {}, h("b", {}, "Fjord isn't your default browser"), h("span", {}, "Links from other apps open somewhere else.")),
@@ -759,17 +755,35 @@
     const closeBtn = h("button", { class: "ns-close", "aria-label": "Close settings", title: "Close" }, h("img", { src: "chrome://global/skin/icons/close.svg", alt: "" }));
     const overlay = openOverlay("Fjord settings", h("div", { class: "ns-card ns-settings" },
       h("aside", { class: "ns-side" }, find, navEl), pane, closeBtn));
-    for (const [key, s] of Object.entries(SECTIONS)) {
-      const b = btn("", "", () => open(key));
-      b.dataset.key = key;
-      b.append(key === "home" ? h("img", { class: "ns-badge ns-logo", src: LOGO, alt: "" }) : badge(key), s.label);
-      navEl.append(b);
+    // The side list in groups; a section no group names goes under the last
+    const GROUPS = [
+      ["", ["home"]],
+      ["Your Fjord", ["appearance", "shortcuts", "newtab", "sidebar", "workspaces", "design", "search"]],
+      ["Privacy and safety", ["privacy", "calm", "applock", "permissions", "report", "proveit", "connection"]],
+      ["Fjord", []],
+    ];
+    const keys = Object.keys(SECTIONS);
+    for (const [name, members] of GROUPS) {
+      const list = name === "Fjord" ? keys.filter(k => !GROUPS.some(([, m]) => m.includes(k))) : keys.filter(k => members.includes(k));
+      if (name) navEl.append(h("span", { class: "ns-nav-group" }, name));
+      for (const key of list) {
+        const b = btn("", "", () => open(key));
+        b.dataset.key = key;
+        b.append(key === "home" ? h("img", { class: "ns-badge ns-logo", src: LOGO, alt: "" }) : badge(key), SECTIONS[key].label);
+        navEl.append(b);
+      }
     }
     on(find, "input", () => {
       const q = find.value.trim().toLowerCase();
-      for (const b of navEl.children) {
+      for (const b of navEl.querySelectorAll("button")) {
         const s = SECTIONS[b.dataset.key];
         b.hidden = !!q && !`${s.label} ${s.keys ?? ""}`.toLowerCase().includes(q);
+      }
+      // A group name goes with its sections
+      for (const g of navEl.querySelectorAll(".ns-nav-group")) {
+        let n = g.nextElementSibling, any = false;
+        for (; n?.localName === "button"; n = n.nextElementSibling) any ||= !n.hidden;
+        g.hidden = !any;
       }
     });
     on(find, "keydown", e => { if (e.key === "Enter") navEl.querySelector("button:not([hidden])")?.click(); });
@@ -777,16 +791,19 @@
     let shown = 0; // a slow section (import, overview) must not replace one opened after it
     async function open(key) {
       const me = ++shown;
-      for (const b of navEl.children) b.toggleAttribute("aria-current", b.dataset.key === key);
+      for (const b of navEl.querySelectorAll("button")) b.toggleAttribute("aria-current", b.dataset.key === key);
       const s = SECTIONS[key];
       const head = key === "home"
-        ? h("header", { class: "ns-head" }, h("div", {}, h("h2", {}, "Fjord settings"), h("p", {}, "Everything Fjord does for you, in one place.")))
+        ? h("header", { class: "ns-head" }, h("div", {}, h("h2", {}, "Settings"), h("p", {}, "Everything Fjord does for you, in one place.")))
         : h("header", { class: "ns-head" }, badge(key, "ns-badge-lg"), h("div", {}, h("h2", {}, s.label), s.desc ? h("p", {}, s.desc) : null));
       const body = (await s.render({ reopen: () => open(key), close })).filter(Boolean);
       if (me !== shown) return;
-      pane.replaceChildren(head, ...body);
+      pane.replaceChildren(head, h("div", { class: "ns-pane-body" }, ...body));
       pane.scrollTop = 0;
+      pane.removeAttribute("scrolled");
     }
+    // The header casts a shadow once the section scrolls under it
+    on(pane, "scroll", () => pane.toggleAttribute("scrolled", pane.scrollTop > 2));
     function close() {
       overlay.remove();
       FJORD.overlayOpen = false;
