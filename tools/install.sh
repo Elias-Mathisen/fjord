@@ -244,12 +244,17 @@ if [ "$OS" = Darwin ]; then
     sips -z $((s * 2)) $((s * 2)) "$files/src/icon.png" --out "$tmp/fjord.iconset/icon_${s}x${s}@2x.png" >/dev/null
   done
   iconutil -c icns "$tmp/fjord.iconset" -o "$R/fjord.icns"
+  cp "$R/fjord.icns" "$R/document.icns" # Firefox's logo on web files Fjord opens, in Finder
   P="$stage/Contents/Info.plist"
   plutil -replace CFBundleName -string Fjord "$P"
   plutil -replace CFBundleDisplayName -string Fjord "$P"
   plutil -replace CFBundleIdentifier -string io.github.eliasmathisen.fjord "$P"
   plutil -replace CFBundleIconFile -string fjord.icns "$P"
   plutil -remove CFBundleIconName "$P" 2>/dev/null || true
+  # macOS takes the name from these over Info.plist (the "change your default web browser?" question, Activity Monitor)
+  find "$stage" -name InfoPlist.strings | while read -r f; do
+    plutil -convert xml1 "$f" && sed -i '' 's/Firefox/Fjord/g' "$f"
+  done
   # Assets.car holds only Firefox's icon, which macOS 27 still shows while the app starts
   rm -f "$R/Assets.car" "$R/firefox.icns"
   # Own data folder (~/Library/Application Support/Fjord): macOS only lets the real Firefox create a "Firefox" folder

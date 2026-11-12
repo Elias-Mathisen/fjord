@@ -387,6 +387,50 @@
   // The profile next to the install (build.ps1's and the installer's layout), not a test profile
   const installedProfile = () => PathUtils.profileDir == PathUtils.join(Services.dirsvc.get("GreD", Ci.nsIFile).parent.path, "profile");
 
+  // Making Fjord the default browser runs Firefox's helper, which registers it with Windows (Default apps, "Open with")
+  // as "Firefox". Renamed to Fjord, only where the command runs this copy's firefox.exe, so a real Firefox keeps its own
+  function nameForWindows() {
+    if (AppConstants.platform != "win") return;
+    const exe = Services.dirsvc.get("XREExeF", Ci.nsIFile).path.toLowerCase();
+    const ico = PathUtils.join(Services.dirsvc.get("GreD", Ci.nsIFile).path, "fjord", "fjord.ico") + ",0";
+    const open = path => {
+      const k = Cc["@mozilla.org/windows-registry-key;1"].createInstance(Ci.nsIWindowsRegKey);
+      try { k.open(k.ROOT_KEY_CURRENT_USER, path, k.ACCESS_ALL); return k; } catch { return null; }
+    };
+    const set = (path, values) => {
+      const k = open(path);
+      if (!k) return;
+      for (const [name, value] of Object.entries(values)) k.writeStringValue(name, value);
+      k.close();
+    };
+    const clients = open("Software\\Clients\\StartMenuInternet");
+    if (!clients) return;
+    const names = [];
+    for (let i = 0; i < clients.childCount; i++) names.push(clients.getChildName(i));
+    clients.close();
+    for (const name of names) {
+      const hash = /^Firefox-(\w+)$/.exec(name)?.[1];
+      if (!hash) continue;
+      const base = `Software\\Clients\\StartMenuInternet\\${name}`;
+      const cmd = open(base + "\\shell\\open\\command");
+      let ours = false;
+      try { ours = cmd?.readStringValue("").toLowerCase().includes(exe); } catch {}
+      cmd?.close();
+      if (!ours) continue;
+      set(base, { "": "Fjord" });
+      set(base + "\\Capabilities", { ApplicationName: "Fjord", ApplicationDescription: "Fjord web browser", ApplicationIcon: ico });
+      set(base + "\\DefaultIcon", { "": ico });
+      for (const [prog, type] of [["FirefoxURL", "Fjord URL"], ["FirefoxHTML", "Fjord HTML Document"], ["FirefoxPDF", "Fjord PDF Document"]]) {
+        const key = `Software\\Classes\\${prog}-${hash}`;
+        set(key, { "": type });
+        set(key + "\\Application", { ApplicationName: "Fjord", ApplicationCompany: "Fjord", ApplicationIcon: ico });
+        set(key + "\\DefaultIcon", { "": ico });
+      }
+    }
+  }
+  const makeDefault = () => window.ShellService.setDefaultBrowser(false).then(nameForWindows);
+  try { nameForWindows(); } catch (e) { console.error(e); } // also fixes a registration made before this
+
   async function showSetup() {
     if (!claimOverlay()) return;
     const firstRun = !prefs.getBoolPref("fjord.setup.done", false);
@@ -484,7 +528,7 @@
       applyTheme(choice.theme);
       applyProtection(choice.protection);
       prefs.setBoolPref("fjord.setup.done", true);
-      if (choice.makeDefault) window.ShellService.setDefaultBrowser(false).catch(console.error);
+      if (choice.makeDefault) makeDefault().catch(console.error);
       if (choice.pin) Promise.resolve(FJORD.shortcut).then(() => window.ShellService.pinToTaskbar()).catch(console.error);
       await setDefaultEngine(choice.search);
     }
@@ -654,7 +698,7 @@
         isDefault ? null : h("div", { class: "ns-callout" },
           h("span", {}, h("b", {}, "Fjord isn't your default browser"), h("span", {}, "Links from other apps open somewhere else.")),
           btn("ns-primary", "Make default", async e => {
-            try { await window.ShellService.setDefaultBrowser(false); } catch (err) { console.error(err); }
+            try { await makeDefault(); } catch (err) { console.error(err); }
             e.target.closest(".ns-callout").remove();
           })),
         h("div", { class: "ns-home-grid" },
