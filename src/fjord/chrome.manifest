@@ -14,5 +14,6 @@ override chrome://branding/content/icon32.png branding/logo.png
 override chrome://branding/content/icon48.png branding/logo.png
 override chrome://branding/content/icon64.png branding/logo.png
 override chrome://branding/content/icon128.png branding/logo.png
+override chrome://activity-stream/content/data/content/assets/splash-logo.svg branding/logo.png
 # chrome://fjord/content/ = this folder, for pages that need Firefox's privileges (the sidebar apps' webpanel.html)
 content fjord ./
