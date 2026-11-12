@@ -799,55 +799,57 @@
   .ns-calm-list { margin: 0 0 12px; padding-inline-start: 20px; display: grid; gap: 6px; color: var(--n-muted); }
   .ns-calm-list b { color: var(--n-text); font-weight: 600; }
 
-  /* Tab folders (Firefox's tab groups): a quiet label with the folder's colour as a dot and an arrow that turns as
-     it folds, a soft wash of the colour while it's folded, and a lighter line under its tabs.
+  /* Tab folders (Firefox's tab groups), minimal: the folder's name, and a thin line in its colour under the name and
+     its tabs. Folded, the name takes the colour and says how many tabs are inside (data-count, features/folders.js);
+     an arrow shows on hover, as the hint that a click folds it. A folder without a name shows a dot of its colour.
      shortcut: targets Firefox 160's tab-group names; re-check after major Firefox updates. */
+  tab-group .tab-group-label-container { position: relative; }
+  tab-group .tab-group-label-hover-highlight {
+    flex-direction: row !important; align-items: center; gap: 4px;
+    background: transparent !important; box-shadow: none !important; border-radius: 6px; padding-inline-end: 4px;
+  }
   tab-group .tab-group-label {
     background: transparent !important;
     color: var(--n-text) !important;
-    border-radius: 8px !important;
-    min-height: 26px;
-    padding: 0 10px 0 8px !important;
-    display: flex !important;
-    align-items: center;
-    gap: 7px;
+    border-radius: 6px !important;
+    padding: 0 2px 0 8px !important;
+    min-height: 0 !important;
     font-size: 12.5px !important;
     font-weight: 600 !important;
     letter-spacing: -0.005em;
-    box-shadow: inset 0 0 0 1px var(--n-line);
-    transition: background-color 0.15s, box-shadow 0.15s;
+    box-shadow: none !important;
+    outline-offset: 2px;
   }
-  tab-group .tab-group-label::before {
-    content: "";
-    flex: none;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--tab-group-color);
+  tab-group[label="\200B"] .tab-group-label::before {
+    content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--tab-group-color);
   }
-  tab-group .tab-group-label::after {
-    content: "";
-    flex: none;
-    width: 5px;
-    height: 5px;
-    margin: 0 1px 2px 1px;
-    border-right: 1.5px solid var(--n-muted);
-    border-bottom: 1.5px solid var(--n-muted);
-    transform: rotate(45deg);
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), margin 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  tab-group[collapsed] .tab-group-label { color: var(--tab-group-color) !important; }
+  tab-group[collapsed] .tab-group-label::after { content: " · " attr(data-count); font-weight: 500; opacity: 0.8; }
+  /* The arrow: down while open, sideways while folded, seen on hover or keyboard focus */
+  tab-group .tab-group-label-hover-highlight::after {
+    content: ""; flex: none; width: 5px; height: 5px; margin-bottom: 2px;
+    border-right: 1.5px solid var(--n-muted); border-bottom: 1.5px solid var(--n-muted);
+    transform: rotate(45deg); opacity: 0;
+    transition: opacity 0.15s, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  tab-group[collapsed] .tab-group-label {
-    background: color-mix(in srgb, var(--tab-group-color) 18%, transparent) !important;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tab-group-color) 40%, transparent);
+  tab-group[collapsed] .tab-group-label-hover-highlight::after { transform: rotate(-45deg); margin-bottom: 0; }
+  tab-group .tab-group-label-container:is(:hover, :focus-within) .tab-group-label-hover-highlight::after { opacity: 1; }
+  @media (hover: hover) { tab-group .tab-group-label-container:hover .tab-group-label-hover-highlight { background: var(--n-hover) !important; } }
+  /* The line: the same 2px as Firefox's line under the folder's tabs, so name and tabs read as one */
+  tab-group .tab-group-label-container::after {
+    content: ""; position: absolute; inset-inline: 4px 0; bottom: 1px; height: 2px; border-radius: 2px;
+    background: color-mix(in srgb, var(--tab-group-color) 70%, transparent);
   }
-  tab-group[collapsed] .tab-group-label::after { transform: rotate(-45deg); margin: 0 2px 0 0; }
-  @media (hover: hover) {
-    tab-group .tab-group-label:hover { background: var(--n-hover) !important; }
-    tab-group[collapsed] .tab-group-label:hover { background: color-mix(in srgb, var(--tab-group-color) 26%, transparent) !important; }
+  tab-group[collapsed] .tab-group-label-container::after { inset-inline-end: 4px; }
+  tab-group .tab-group-line { background-color: color-mix(in srgb, var(--tab-group-color) 70%, transparent) !important; }
+  tab-group .tab-group-overflow-count { color: var(--n-muted) !important; font-weight: 600; background: transparent !important; }
+  /* Down the side: the name with a line under it, the folder's tabs indented below, no line along their side */
+  #tabbrowser-tabs[orient="vertical"] tab-group .tab-group-label-container { padding-bottom: 4px; }
+  /* Firefox draws its own line down the side with the same ::after, so its size is taken back here */
+  #tabbrowser-tabs[orient="vertical"] tab-group .tab-group-label-container::after {
+    inset-inline: 8px !important; top: auto !important; bottom: 0 !important; width: auto !important; height: 2px !important;
   }
-  tab-group .tab-group-label-hover-highlight { background: transparent !important; box-shadow: none !important; }
-  tab-group .tab-group-line { background-color: color-mix(in srgb, var(--tab-group-color) 55%, transparent) !important; border-radius: 2px; }
-  tab-group .tab-group-overflow-count { color: var(--n-muted) !important; font-weight: 600; }
-  @media (prefers-reduced-motion: reduce) {
-    tab-group .tab-group-label::after { transition: none; }
-  }
+  /* Left-aligned: Firefox centres it with pack="center", which outranks a page rule, so the space goes after the arrow */
+  #tabbrowser-tabs[orient="vertical"] tab-group .tab-group-label-hover-highlight::after { margin-inline-end: auto; }
+  #tabbrowser-tabs[orient="vertical"] tab-group .tab-group-line { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { tab-group .tab-group-label-hover-highlight::after { transition: none; } }

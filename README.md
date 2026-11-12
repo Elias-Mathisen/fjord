@@ -23,7 +23,7 @@ follow every Firefox security update the day it ships.
   and never sent anywhere (also on iPhone)
 - **Fjord's connections**: a live list of every connection Fjord itself makes
 - **Spaces**: separate sets of tabs like Work and Personal, each with its own colour and sign-ins
-- **Tab folders** (Firefox's tab groups) in Fjord's look: a coloured dot and an arrow that folds them away, and in the command bar
+- **Tab folders** (Firefox's tab groups), minimal: a name and a line in the folder's colour; click the name to fold it away
 - **Split view**: two tabs side by side, from a tab's right-click menu, a link's, or the command bar
 - **Sync** with your iPhone over the home Wi-Fi, and with your other devices through a folder you choose (iCloud Drive,
   Dropbox, a USB stick), sealed with the pairing's key; computers also share passwords and settings. No account, no server
