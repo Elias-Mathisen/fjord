@@ -211,12 +211,13 @@
     switchRow(label, desc, prefs.getBoolPref(names[0], false), v => names.forEach(p => prefs.setBoolPref(p, v)));
 
   const THEMES = [
-    { value: "dark", name: "Dark" },
-    { value: "light", name: "Light" },
-    { value: "system", name: "System" },
+    { value: "dark", name: "Dark", text: "Easy on the eyes at night" },
+    { value: "light", name: "Light", text: "Bright and paper-like" },
+    { value: "system", name: "System", text: "Follows your computer" },
   ];
+  const tile = (img, name, text) => [h("img", { src: `${ART}${img}.svg`, alt: "" }), h("span", {}, h("b", {}, name), h("span", {}, text))];
   const themeChoices = (current, onPick) => choices("ns-tiles", THEMES.map(t => ({
-    value: t.value, content: [h("img", { src: `${ART}theme-${t.value}.svg`, alt: "" }), h("b", {}, t.name)],
+    value: t.value, content: tile(`theme-${t.value}`, t.name, t.text),
   })), current, onPick);
 
   const LEVELS = [
@@ -247,8 +248,8 @@
 
   // sidebar.verticalTabs moves the tabs into Firefox's sidebar, live
   const tabChoices = () => choices("ns-tiles ns-tiles-2", [
-    { value: false, content: [h("img", { src: `${ART}tabs-horizontal.svg`, alt: "" }), h("b", {}, "Tabs on top")] },
-    { value: true, content: [h("img", { src: `${ART}tabs-vertical.svg`, alt: "" }), h("b", {}, "Tabs on the side")] },
+    { value: false, content: tile("tabs-horizontal", "Tabs on top", "The usual row above the page") },
+    { value: true, content: tile("tabs-vertical", "Tabs on the side", "Room for long titles and many tabs") },
   ], prefs.getBoolPref("sidebar.verticalTabs", false), v => prefs.setBoolPref("sidebar.verticalTabs", v));
 
   // Secure DNS (DNS over HTTPS); policies.json starts it on with Quad9. Mode 2 falls back to the network's DNS
@@ -265,7 +266,13 @@
     prefs.setIntPref("network.trr.mode", uri ? 2 : 5);
   }
 
-  async function engineChoices(current, onPick) {
+  // What happens to your searches with each engine, for the setup's larger cards
+  const ENGINE_NOTES = {
+    DuckDuckGo: "Doesn't keep what you search for or build a profile of you.",
+    Google: "The most results. Your searches go to Google, which uses them for ads.",
+    Bing: "Microsoft's search. Your searches go to Microsoft, which uses them for ads.",
+  };
+  async function engineChoices(current, onPick, detailed = false) {
     await SearchService.init();
     const visible = await SearchService.getVisibleEngines();
     const items = [];
@@ -274,9 +281,11 @@
       if (!engine) continue;
       let icon = null;
       try { icon = await engine.getIconURL(32); } catch {}
-      items.push({ value: name, content: [icon ? h("img", { src: icon, alt: "" }) : null, h("span", {}, name)] });
+      items.push({ value: name, content: detailed
+        ? [icon ? h("img", { src: icon, alt: "" }) : null, h("span", {}, h("b", {}, name), h("span", {}, ENGINE_NOTES[name] ?? ""))]
+        : [icon ? h("img", { src: icon, alt: "" }) : null, h("span", {}, name)] });
     }
-    return choices("ns-pills", items, current, onPick);
+    return choices(detailed ? "ns-engines" : "ns-pills", items, current, onPick);
   }
 
   async function setDefaultEngine(name) {
@@ -449,71 +458,94 @@
     const canPin = (AppConstants.platform == "macosx" || (AppConstants.platform == "win" && installedProfile())) &&
       await window.ShellService.doesAppNeedPin().catch(() => false);
 
-    // Same look as the installer: an ink drawing on the left, the logo and the step on the right
+    // The drawing as a wide band across the top with the step names on it, the step's choices below it and its buttons
+    // in a bar along the bottom. Welcome and the last step get a taller band and two columns instead
     const brand = () => h("div", { class: "ns-brand" }, h("img", { src: LOGO, alt: "" }), h("b", {}, "Fjord"));
-    const head = (title, text) => [h("h2", {}, title), h("p", {}, text)];
-    const ready = ["Ads and trackers blocked", "Cookie pop-ups rejected", "Secure connections only", "Tracking removed from links"];
+    const rows = items => h("ul", { class: "ns-rows" }, ...items.map(([ic, label, note]) =>
+      h("li", {}, icon(ic), h("b", {}, label), h("span", {}, note))));
+    const ALREADY = [["privacy", "Ads and trackers blocked", "on every site"], ["check", "Cookie pop-ups rejected", "and closed for you"],
+      ["check", "Calm web", "no fake urgency"], ["connection", "Secure connections only", "HTTPS"]];
+    const tabsSide = () => prefs.getBoolPref("sidebar.verticalTabs", false);
     const steps = [
-      () => [brand(),
-        h("div", { class: "ns-end" },
-          h("h1", {}, "Welcome to Fjord"),
-          h("p", {}, "Ads and trackers are blocked from the first page you open. Make a few choices and you're set."),
-          h("div", { class: "ns-actions" }, btn("ns-primary", "Get started", next), btn("ns-link", "Skip setup", finish)))],
-      async () => [...head("Bring your things over", "Bookmarks, history and saved passwords from the browser you use now."),
-        await importPanel(),
-        nav()],
-      () => [...head("Make it yours", "Fjord changes as you pick, so you can try each one."),
-        themeChoices(choice.theme, v => applyTheme(choice.theme = v)),
-        h("h3", {}, "Tabs"),
-        tabChoices(),
-        nav()],
-      () => [...head("Choose your protection", "Every level blocks ads and trackers. The stricter ones cost a little convenience."),
-        protectionPicker(choice.protection, v => (choice.protection = v)),
-        nav()],
-      async () => [...head("Pick a search engine", "Used when you search from the address bar."),
-        await engineChoices(choice.search, v => (choice.search = v)),
-        nav()],
-      ...(!isDefault || canPin ? [() => [...head("Keep Fjord close", "Open links in Fjord and start it in one click. You can change both later."),
-        h("div", { class: "ns-group" },
+      { hero: true, title: "Welcome to Fjord",
+        text: "You're already protected. A few quick choices make Fjord feel like yours, and you can change all of them later.",
+        side: () => [h("h3", {}, "Already on"), rows(ALREADY)],
+        actions: () => [btn("ns-primary", "Get started", next), btn("ns-link", "Skip setup", finish)] },
+      { nav: "Your things", title: "Bring your things over", text: "Bookmarks, history and saved passwords from the browser you use now.",
+        body: async () => [await importPanel()], hint: "You can also import later in Settings › Import" },
+      { nav: "Make it yours", title: "Make it yours", text: "Fjord changes as you pick, so you can try each one.", cls: "ns-look",
+        body: () => [h("section", {}, h("h3", {}, "Look"), themeChoices(choice.theme, v => applyTheme(choice.theme = v))),
+          h("section", {}, h("h3", {}, "Tabs"), tabChoices())],
+        hint: "You can change this in Settings › Appearance" },
+      { nav: "Protection", title: "Choose your protection", text: "Every level blocks ads and trackers. The stricter ones cost a little convenience.",
+        body: () => [protectionPicker(choice.protection, v => (choice.protection = v))],
+        hint: "Shields in the address bar changes it for one site" },
+      { nav: "Search", title: "Pick a search engine", text: "Used when you search from the address bar.",
+        body: async () => [await engineChoices(choice.search, v => (choice.search = v), true)],
+        hint: "You can change this in Settings › Search" },
+      ...(!isDefault || canPin ? [{ nav: "Keep close", title: "Keep Fjord close",
+        text: "Open links in Fjord and start it in one click. You can change both later.",
+        body: () => [h("div", { class: "ns-group" },
           isDefault ? null : switchRow("Make Fjord your default browser", "Links you open in other apps open in Fjord.",
             choice.makeDefault ??= true, v => (choice.makeDefault = v)),
           canPin ? switchRow(AppConstants.platform == "macosx" ? "Keep Fjord in the Dock" : "Pin Fjord to the taskbar",
             AppConstants.platform == "macosx" ? "Fjord stays in the Dock after you quit it." : "Windows asks you to confirm once setup is done.",
-            choice.pin ??= true, v => (choice.pin = v)) : null),
-        nav()]] : []),
-      () => [brand(),
-        h("div", { class: "ns-end" },
-          h("h1", {}, "You're all set"),
-          h("p", {}, "Fjord settings are at the top of the ☰ menu whenever you want to change something."),
-          h("ul", { class: "ns-summary ns-ready" }, ...ready.map(t => h("li", { class: "ns-yes" }, icon("check"), t))),
-          h("div", { class: "ns-actions" }, btn("ns-primary", "Start browsing", finish)))],
+            choice.pin ??= true, v => (choice.pin = v)) : null)] }] : []),
+      { hero: true, done: true, title: "You're all set",
+        text: "Fjord settings are at the top of the ☰ menu whenever you want to change something.",
+        side: () => [h("h3", {}, "Your Fjord"), rows([
+          ["appearance", "Look", `${THEMES.find(t => t.value === choice.theme)?.name ?? ""}, tabs ${tabsSide() ? "on the side" : "on top"}`],
+          ["privacy", "Protection", LEVELS.find(l => l.value === choice.protection)?.name ?? ""],
+          ["search", "Search engine", choice.search],
+          ["check", "Also on", "Calm web, cookie pop-ups rejected"]])],
+        actions: () => [btn("ns-primary", "Start browsing", finish)] },
     ];
 
-    const dots = h("div", { class: "ns-dots" }, ...steps.map(() => h("i")));
-    const body = h("div", { class: "ns-body" });
     // The cabin while you set things up, the jetty once you're done: both are there, and the jetty fades in at the end
-    const cabin = h("img", { src: `${ART}setup-cabin.jpg`, alt: "" });
-    const jetty = h("img", { class: "ns-art-end", src: `${ART}setup-jetty.jpg`, alt: "" });
-    const artBox = h("div", { class: "ns-setup-art" }, cabin, jetty);
-    const overlay = openOverlay("Fjord setup",
-      h("div", { class: "ns-card ns-setup" }, artBox, h("div", { class: "ns-setup-main" }, dots, body)));
+    const cabin = h("img", { src: `${ART}setup-wide-cabin.jpg`, alt: "" });
+    const jetty = h("img", { class: "ns-art-end", src: `${ART}setup-wide-jetty.jpg`, alt: "" });
+    // Step names along the top of the band: done ones take you back, coming ones aren't clickable yet
+    const navButtons = steps.map((s, i) => s.nav && btn("ns-step", s.nav, () => show(i)));
+    const head = h("div", { class: "ns-setup-head" });
+    const band = h("div", { class: "ns-setup-band" }, cabin, jetty, h("div", { class: "ns-scrim" }),
+      h("div", { class: "ns-setup-top" }, brand(), h("nav", { class: "ns-steps", "aria-label": "Setup steps" }, ...navButtons.filter(Boolean))),
+      head);
+    const body = h("div", { class: "ns-body" });
+    const foot = h("div", { class: "ns-setup-foot" });
+    const card = h("div", { class: "ns-card ns-setup" }, band, body, foot);
+    const overlay = openOverlay("Fjord setup", card);
     let step = 0;
-    function nav() {
-      return h("div", { class: "ns-actions ns-step-actions" }, btn("ns-link ns-back", "Back", back), btn("ns-primary", "Continue", next));
-    }
     async function show(i) {
+      const s = steps[i];
       // Content slides in from the side you're heading to: from the right going on, from the left going back
-      body.style.setProperty("--dir", i < step ? -1 : 1);
+      card.style.setProperty("--dir", i < step ? -1 : 1);
       step = i;
-      [...dots.children].forEach((d, j) => { d.toggleAttribute("on", j <= i); d.toggleAttribute("now", j === i); });
-      body.replaceChildren(...await steps[i]());
+      card.toggleAttribute("hero", !!s.hero);
+      band.toggleAttribute("done", !!s.done);
+      navButtons.forEach((b, j) => {
+        if (!b) return;
+        b.disabled = j > i;
+        b.toggleAttribute("past", j < i);
+        if (j === i) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
+      });
+      if (s.hero) {
+        head.replaceChildren();
+        body.replaceChildren(
+          h("div", { class: "ns-hero-main" }, h("h1", {}, s.title), h("p", {}, s.text), h("div", { class: "ns-actions" }, ...s.actions())),
+          h("div", { class: "ns-hero-side" }, ...s.side()));
+        foot.replaceChildren();
+      } else {
+        head.replaceChildren(h("h2", {}, s.title), h("p", {}, s.text));
+        body.replaceChildren(...await s.body());
+        foot.replaceChildren(btn("ns-link", "Back", back), h("span", { class: "ns-hint" }, s.hint ?? ""), btn("ns-primary", "Continue", next));
+      }
+      body.className = `ns-body ${s.cls ?? ""}`;
       // Pieces arrive one after another (capped, so a long list doesn't keep you waiting)
-      [...body.children].forEach((c, n) => c.style.setProperty("--i", Math.min(n, 6)));
-      body.querySelectorAll(".ns-end > *").forEach((c, n) => c.style.setProperty("--i", Math.min(n + 1, 6)));
+      [...head.children, ...body.querySelectorAll(":scope > *, .ns-hero-main > *, .ns-rows > li")]
+        .forEach((c, n) => c.style.setProperty("--i", Math.min(n, 8)));
       body.querySelectorAll(":is(.ns-tiles, .ns-options, .ns-pills, .ns-sources) > button")
         .forEach((b, n) => b.style.setProperty("--j", Math.min(n, 7)));
-      artBox.toggleAttribute("done", i === steps.length - 1);
-      body.querySelector(".ns-primary")?.focus();
+      card.querySelector(".ns-primary")?.focus();
     }
     function next() { show(step + 1); }
     function back() { show(step - 1); }

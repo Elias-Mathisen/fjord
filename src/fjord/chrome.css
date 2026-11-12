@@ -216,114 +216,148 @@
   .ns-link { padding: 9px 12px; border: none; border-radius: 10px; background: transparent; color: var(--n-muted) !important; }
   .ns-link:hover { color: var(--n-text) !important; background: var(--n-hover); }
 
-  /* Setup: the installer's look, an ink drawing on the left and the step on the right */
-  /* Most of the window, up to a size where lines stay readable; the drawing takes a bit over a third */
+  /* Setup: the drawing as a wide band across the top, the step's choices below, its buttons in a bar at the bottom.
+     Welcome and the last step have a taller band and two columns (browser.js sets [hero]) */
   .ns-setup {
-    display: grid;
-    grid-template-columns: minmax(280px, 38%) minmax(0, 1fr);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
     width: min(1160px, calc(100vw - 80px));
-    height: min(740px, calc(100vh - 72px));
+    height: min(700px, calc(100vh - 72px));
     overflow: hidden;
   }
-  .ns-setup-art { position: relative; overflow: hidden; }
-  /* The drawing's paper is pure white: in light mode it multiplies into the card; in dark mode it's inverted to light
-     lines and screened onto the dark card */
-  .ns-setup-art {
+  .ns-setup-band {
     --art-opacity: 0.8;
-    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    flex-shrink: 0;
+    height: 240px;
+    overflow: hidden;
+    transition: height 0.55s var(--ease-out);
   }
-  .ns-setup-art img {
+  .ns-setup[hero] .ns-setup-band { height: 58%; }
+  /* The drawing's paper is pure white: in dark mode it's inverted to light lines and screened onto the dark card; in
+     light mode it multiplies into it. It never moves; only the cabin fading into the jetty at the end does */
+  .ns-setup-band > img {
     position: absolute;
     inset: 0;
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: 50% 66%;
     filter: invert(1);
     mix-blend-mode: screen;
     opacity: var(--art-opacity);
-    mask-image: linear-gradient(to right, #000 82%, transparent);
-    /* Stays still while you set up; only the cabin fading into the jetty at the end moves */
     transition: opacity 0.9s ease;
   }
-  .ns-setup-art .ns-art-end { opacity: 0; }
-  .ns-setup-art[done] img { opacity: 0; }
-  .ns-setup-art[done] .ns-art-end { opacity: var(--art-opacity); }
+  .ns-setup-band .ns-art-end { opacity: 0; }
+  .ns-setup-band[done] > img { opacity: 0; }
+  .ns-setup-band[done] > .ns-art-end { opacity: var(--art-opacity); }
   @media (prefers-color-scheme: light) {
-    .ns-setup-art { --art-opacity: 1; }
-    .ns-setup-art img { filter: none; mix-blend-mode: multiply; }
+    .ns-setup-band { --art-opacity: 1; }
+    .ns-setup-band > img { filter: none; mix-blend-mode: multiply; }
   }
-  .ns-setup-main { position: relative; display: flex; flex-direction: column; min-height: 0; }
-  .ns-setup .ns-dots { position: absolute; top: 38px; right: 56px; z-index: 1; display: flex; gap: 5px; }
-  .ns-setup .ns-dots i {
-    width: 14px;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--n-line);
-    transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s;
+  /* Darker at the top behind the step names, fading into the card at the bottom behind the title */
+  .ns-scrim {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--n-surface) 45%, transparent) 0%, transparent 30%,
+      transparent 45%, var(--n-surface) 100%);
   }
-  .ns-setup .ns-dots i[on] { background: var(--n-accent); }
-  .ns-setup .ns-dots i[now] { width: 30px; }
-  .ns-body {
+  .ns-setup-top { position: absolute; top: 26px; left: 48px; right: 48px; display: flex; align-items: center; gap: 24px; }
+  .ns-brand { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 650; }
+  .ns-brand img { width: 36px; height: 36px; }
+  .ns-setup:not([hero]) .ns-brand, .ns-setup[hero] .ns-steps { display: none; }
+  /* The step names sit on a frosted bar, so they read on any part of the drawing */
+  .ns-steps {
     display: flex;
-    flex: 1;
-    flex-direction: column;
-    min-height: 0;
-    overflow: auto;
-    padding: 52px 56px 40px 40px;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--n-surface) 72%, transparent);
+    backdrop-filter: blur(12px) saturate(1.2);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-line) 70%, transparent);
   }
+  .ns-setup .ns-step { padding: 7px 12px; border: none; border-radius: 8px; background: transparent; color: var(--n-muted) !important; font-size: 13px; }
+  .ns-setup .ns-step[past]:hover { color: var(--n-text) !important; background: var(--n-hover); }
+  .ns-setup .ns-step:disabled { cursor: default; color: color-mix(in srgb, var(--n-muted) 70%, transparent) !important; }
+  .ns-setup .ns-step[aria-current] { color: var(--n-on-accent) !important; background: var(--n-accent); font-weight: 600 !important; }
+  .ns-setup-head { position: absolute; left: 48px; right: 48px; bottom: 18px; }
+  .ns-setup-head h2 { margin: 0 0 6px; font-size: 34px; line-height: 1.08; letter-spacing: -0.03em; }
+  .ns-setup-head p { margin: 0; max-width: 64ch; font-size: 15px; }
+
+  /* A step's choices sit in the middle of the space under the band; a long list scrolls from the top instead */
+  .ns-body { flex: 1; min-height: 0; overflow: auto; padding: 22px 48px 6px; }
+  .ns-setup:not([hero]) .ns-body { display: flex; flex-direction: column; justify-content: safe center; }
+  .ns-setup h3 { margin: 0 0 12px; font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--n-text); }
+  .ns-setup .ns-body.ns-look { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 40px; align-content: safe center; }
+  .ns-setup .ns-tiles-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Keep Fjord close: the two switches as cards side by side */
+  .ns-setup .ns-body > .ns-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; border: none; background: none; overflow: visible; }
+  .ns-setup .ns-body > .ns-group > * { padding: 22px; border: none; border-radius: 14px; background: var(--n-raised); box-shadow: inset 0 0 0 1px var(--n-line); align-items: flex-start; }
+  .ns-setup-foot { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 16px 48px 28px; box-shadow: inset 0 1px 0 var(--n-line); }
+  .ns-setup-foot:empty { display: none; }
+  .ns-hint { margin-inline: auto 12px; color: var(--n-muted); font-size: 13px; }
+
+  /* Welcome and done: words and the button on the left, a list on the right */
+  .ns-setup[hero] .ns-body { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 56px; align-items: end; padding: 0 48px 44px; }
+  .ns-hero-main { display: flex; flex-direction: column; justify-content: flex-end; }
+  .ns-hero-main h1 { margin: 0 0 14px; font-size: 52px; line-height: 1.02; letter-spacing: -0.035em; }
+  .ns-hero-main p { max-width: 40ch; font-size: 17px; }
+  .ns-hero-main .ns-actions { justify-content: flex-start; margin-top: 32px; }
+  .ns-hero-side { display: flex; flex-direction: column; justify-content: flex-end; }
+  .ns-hero-side h3 { margin: 0 0 4px; font-size: 13px; font-weight: 500; color: var(--n-muted); }
+  .ns-rows { margin: 0; padding: 0; list-style: none; }
+  .ns-rows li { display: flex; align-items: center; gap: 14px; padding: 14px 0; box-shadow: inset 0 -1px 0 var(--n-line); }
+  .ns-rows li:last-child { box-shadow: none; }
+  .ns-rows .ns-icon { width: 20px; height: 20px; }
+  .ns-rows b { flex: 1; font-weight: 500; }
+  .ns-rows span { color: var(--n-muted); font-size: 13px; text-align: end; }
+
   /* A step's pieces slide in from the side you're heading to, one after another (browser.js sets --dir and --i) */
   @keyframes ns-step { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 22px)); } }
   @keyframes ns-settle { from { opacity: 0; transform: translateY(10px) scale(0.98); } }
-  .ns-body > *, .ns-end > * { animation: ns-step 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--i, 0) * 50ms); }
-  .ns-end { animation: none !important; }
-  .ns-body :is(.ns-tiles, .ns-options, .ns-pills, .ns-sources) > button {
-    animation: ns-settle 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  .ns-setup-head > *, .ns-body > *, .ns-hero-main > *, .ns-rows > li {
+    animation: ns-step 0.5s var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 50ms);
+  }
+  .ns-setup[hero] .ns-body > * { animation: none; }
+  .ns-body :is(.ns-tiles, .ns-options, .ns-pills, .ns-sources, .ns-engines) > button {
+    animation: ns-settle 0.45s var(--ease-out) both;
     animation-delay: calc(140ms + var(--j, 0) * 45ms);
   }
   /* Buttons give a little under the finger */
   .ns-setup button { transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.12s; }
-  .ns-setup button:active { transform: scale(0.97); }
+  .ns-setup button:not(:disabled):active { transform: scale(0.97); }
   /* The protection summary ripples when you pick another level */
-  .ns-summary li { animation: ns-settle 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .ns-summary li { animation: ns-settle 0.35s var(--ease-out, ease-out) both; }
   .ns-summary li:nth-child(2) { animation-delay: 30ms; }
   .ns-summary li:nth-child(3) { animation-delay: 60ms; }
   .ns-summary li:nth-child(4) { animation-delay: 90ms; }
   .ns-summary li:nth-child(5) { animation-delay: 120ms; }
   @media (prefers-reduced-motion: reduce) {
     .ns-setup *, .ns-summary li { animation: none !important; }
-    .ns-setup-art img { transition: opacity 0.3s !important; transform: none !important; }
+    .ns-setup-band { transition: none; }
     .ns-setup button:active { transform: none; }
   }
-  .ns-body > h2 { margin: 0 150px 8px 0; font-size: 28px; letter-spacing: -0.02em; }
-  .ns-body > p { max-width: 56ch; font-size: 15px; }
-  .ns-setup .ns-end h1 { font-size: 40px; line-height: 1.1; letter-spacing: -0.03em; }
-  .ns-setup .ns-end p { max-width: 46ch; font-size: 16px; }
-  .ns-body > .ns-step-actions { margin-top: auto; padding-top: 28px; }
-  .ns-brand { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 650; }
-  .ns-brand img { width: 36px; height: 36px; }
-  /* Welcome and done: the brand at the top, the words and button at the bottom, like the installer */
-  .ns-end { margin-top: auto; }
-  .ns-end .ns-actions { justify-content: flex-start; margin-top: 22px; }
-  /* The tab tiles the same size as the theme tiles above them, so the step fits without scrolling */
-  .ns-setup .ns-tiles-2 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .ns-setup h3 { margin-top: 22px; font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--n-text); }
-  @media (max-width: 760px) {
-    .ns-setup { grid-template-columns: 1fr; }
-    .ns-setup-art { display: none; }
+  @media (max-width: 760px), (max-height: 600px) {
+    .ns-setup-band, .ns-setup[hero] .ns-setup-band { height: 150px; }
+    .ns-setup[hero] .ns-body, .ns-look { grid-template-columns: 1fr; gap: 24px; }
   }
   .ns-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 30px; }
   .ns-actions .ns-back, .ns-actions .ns-link:first-child { margin-inline-end: auto; }
 
   /* Choice groups */
-  :is(.ns-tiles, .ns-options, .ns-pills, .ns-sources) > button {
+  :is(.ns-tiles, .ns-options, .ns-pills, .ns-sources, .ns-engines) > button {
     border: 1px solid var(--n-line);
     border-radius: 14px;
     background: var(--n-raised);
     text-align: start;
   }
-  :is(.ns-tiles, .ns-options, .ns-pills, .ns-sources) > button:hover { border-color: color-mix(in srgb, var(--n-accent) 45%, var(--n-line)); }
-  :is(.ns-tiles, .ns-options, .ns-pills, .ns-sources) > button[aria-pressed="true"] {
+  :is(.ns-tiles, .ns-options, .ns-pills, .ns-sources, .ns-engines) > button:hover { border-color: color-mix(in srgb, var(--n-accent) 45%, var(--n-line)); }
+  :is(.ns-tiles, .ns-options, .ns-pills, .ns-sources, .ns-engines) > button[aria-pressed="true"] {
     border-color: var(--n-accent);
     box-shadow: 0 0 0 3px var(--n-accent-soft);
     background: var(--n-accent-soft);
@@ -332,7 +366,14 @@
   .ns-tiles-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ns-tiles > button { display: grid; gap: 10px; padding: 10px 10px 12px; }
   .ns-tiles img { width: 100%; border-radius: 8px; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06); }
-  .ns-tiles b { padding-inline: 2px; font-weight: 500; }
+  .ns-tiles b { font-weight: 500; }
+  .ns-tiles > button > span { display: grid; gap: 2px; padding-inline: 2px; text-align: start; }
+  .ns-tiles > button > span > span { color: var(--n-muted); font-size: 13px; line-height: 1.4; }
+  .ns-engines { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .ns-engines > button { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; padding: 22px; text-align: start; }
+  .ns-engines img { width: 32px; height: 32px; }
+  .ns-engines span { display: grid; gap: 6px; }
+  .ns-engines span span { color: var(--n-muted); font-size: 13px; line-height: 1.45; }
   .ns-options { display: grid; gap: 8px; }
   .ns-options > button { display: grid; grid-template-columns: 36px 1fr; align-items: center; gap: 14px; padding: 13px 16px; }
   .ns-options > button:not(:has(img)) { grid-template-columns: 1fr; }
@@ -351,7 +392,6 @@
   .ns-summary li .ns-icon { width: 16px; height: 16px; margin-top: 1px; stroke: var(--n-muted); opacity: 0.6; }
   .ns-summary li.ns-yes { color: var(--n-text); }
   .ns-summary li.ns-yes .ns-icon { stroke: var(--n-good); opacity: 1; }
-  .ns-ready { grid-template-columns: 1fr 1fr; margin-top: 4px; }
 
   /* Import */
   .ns-import { display: grid; gap: 14px; }
