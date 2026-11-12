@@ -30,7 +30,7 @@ follow every Firefox security update the day it ships.
 - **Calm web**: takes out fake urgency ("Only 2 left"), offer countdowns, guilt-trip buttons, pop-ups and autoplaying video; off per site in Shields
 - Sidebar apps (Spotify, WhatsApp…), Memory saver, design tools (colour picker, font finder, asset saver,
   full-page screenshots)
-- A new tab with 100 hand-picked Unsplash photos and privacy stats, reader view in Fjord's font, and a ski jump game
+- A new tab with 100 hand-picked Unsplash photos (or your own picture) and privacy stats, reader view in Fjord's font, and a ski jump game
   when you're offline
 
 ## Layout

@@ -56,13 +56,41 @@
     photos: ["Photos", "A different landscape on every new tab. Off shows a plain background."],
   };
   const newtabLayout = () => Object.fromEntries(Object.keys(NEWTAB).map(k => [k, prefs.getBoolPref(`fjord.newtab.${k}`, true)]));
+  // Your own picture for the new tab: copied into the profile's fjord-photos folder (where the downloaded photos are,
+  // so the new tab can show it) under a new name each time, so a changed picture isn't the old one from cache
+  const OWN_PHOTO = "fjord.newtab.own";
+  const photoDir = PathUtils.join(PathUtils.profileDir, "fjord-photos");
+  const IMAGE = /\.(jpe?g|png|webp|avif|gif)$/i;
+  async function setOwnPhoto(file) {
+    const old = prefs.getStringPref(OWN_PHOTO, "");
+    if (file) {
+      if (!IMAGE.test(file.leafName)) throw new Error("Choose a JPEG, PNG, WebP, AVIF or GIF picture.");
+      if (file.fileSize > 40 << 20) throw new Error("That picture is over 40 MB. Choose a smaller one.");
+      const name = `own-${Date.now()}${IMAGE.exec(file.leafName)[0].toLowerCase()}`;
+      await IOUtils.makeDirectory(photoDir, { ignoreExisting: true });
+      await IOUtils.copy(file.path, PathUtils.join(photoDir, name));
+      prefs.setStringPref(OWN_PHOTO, name);
+    } else {
+      prefs.clearUserPref(OWN_PHOTO);
+    }
+    if (old) await IOUtils.remove(PathUtils.join(photoDir, old), { ignoreAbsent: true }).catch(console.error);
+  }
+  function chooseOwnPhoto(reopen) {
+    const fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+    fp.init(window.browsingContext, "Choose a picture for the new tab", Ci.nsIFilePicker.modeOpen);
+    fp.appendFilters(Ci.nsIFilePicker.filterImages);
+    fp.open(r => {
+      if (r === Ci.nsIFilePicker.returnOK) setOwnPhoto(fp.file).then(reopen, e => toast(gBrowser.selectedBrowser, e.message));
+    });
+  }
   // Firefox's tracker blocking and uBlock never count the same request: what uBlock blocks never reaches Firefox
   const writeStats = async () => {
     const [etp, ubo, since] = await Promise.all([trackingDB.sumAllEvents(), ublock.totalBlocked().catch(() => 0), trackingDB.getEarliestRecordedDate()]);
     await privacy.recordBlocked(etp + ubo);
     const week = await privacy.weekSummary();
     // Firefox's own first date is a UTC day; Fjord's is the local one
-    const data = { blocked: etp + ubo, since: week.since ? `${week.since}T00:00` : since, week, layout: newtabLayout() };
+    const data = { blocked: etp + ubo, since: week.since ? `${week.since}T00:00` : since, week,
+      layout: { ...newtabLayout(), own: prefs.getStringPref(OWN_PHOTO, "") } };
     await IOUtils.writeUTF8(statsFile, `fjordStats(${JSON.stringify(data)});\n`, { tmpPath: statsFile + ".tmp" });
   };
   // The new-tab photos that don't come with Fjord, downloaded once in the background (photos.sys.mjs)
@@ -552,12 +580,19 @@
         },
       },
       newtab: {
-        label: "New tab", desc: "Choose what your new tab shows.", keys: "new tab stats time saved data saved week summary clock photos background customize",
-        render: () => [
+        label: "New tab", desc: "Choose what your new tab shows.", keys: "new tab stats time saved data saved week summary clock photos background customize own picture image wallpaper",
+        render: ({ reopen }) => [
           h("h3", {}, "Privacy stats"),
           h("div", { class: "ns-group" }, ...["blocked", "time", "data", "week"].map(k => prefSwitch(NEWTAB[k][0], NEWTAB[k][1], `fjord.newtab.${k}`))),
           h("h3", {}, "Look"),
           h("div", { class: "ns-group" }, ...["clock", "photos"].map(k => prefSwitch(NEWTAB[k][0], NEWTAB[k][1], `fjord.newtab.${k}`))),
+          h("h3", {}, "Your own picture"),
+          h("div", { class: "ns-group" }, prefs.getStringPref(OWN_PHOTO, "")
+            ? h("div", { class: "ns-list-row" }, h("span", {}, "Your picture is on every new tab, instead of the landscapes."),
+              h("span", { class: "ns-row" }, btn("ns-link", "Change", () => chooseOwnPhoto(reopen)),
+                btn("ns-link", "Remove", () => setOwnPhoto(null).then(reopen, console.error))))
+            : h("div", { class: "ns-list-row" }, h("span", { class: "ns-quiet" }, "A photo of your own instead of the landscapes. It stays on this computer."),
+              btn("ns-secondary", "Choose a picture…", () => chooseOwnPhoto(reopen)))),
         ],
       },
       connection: {

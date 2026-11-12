@@ -118,8 +118,26 @@ function pickPhoto() {
   if (p === bundled || !downloaded) showBundled();
   else showPhoto(p, downloaded + p.file.replace(/^photos\//, ""), showBundled);
 }
-dark.addEventListener("change", () => pickPhoto());
-pickPhoto();
+// Your own picture (Fjord settings > New tab), named in the layout: shown instead of the landscapes, in both themes.
+// The first photo waits for the layout, so a landscape doesn't flash up before your picture.
+let own = null, started = false;
+function showOwn(name) {
+  own = name;
+  photo.classList.remove("ready");
+  photo.onload = () => photo.classList.add("ready");
+  photo.onerror = () => { own = null; pickPhoto(); };
+  photo.src = downloaded + name;
+  credit.textContent = "";
+}
+function startPhoto(layout) {
+  const name = layout?.own && downloaded && /^own-\d+\.[a-z]+$/.test(layout.own) ? layout.own : null;
+  if (started && name === own) return;
+  started = true;
+  if (name) showOwn(name);
+  else { own = null; pickPhoto(); }
+}
+dark.addEventListener("change", () => { if (!own) pickPhoto(); });
+setTimeout(() => { if (!started) startPhoto(null); }, 400); // no layout yet (or none at all)
 
 // Estimates, like other browsers make: about 50 ms and 40 KB for each ad or tracker that never loaded
 function duration(ms) {
@@ -141,6 +159,7 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 function fjordStats({ blocked, since, week, layout }) {
   for (const e of document.querySelectorAll("[data-show]")) e.hidden = layout ? !layout[e.dataset.show] : false;
   document.body.classList.toggle("plain", layout?.photos === false);
+  startPhoto(layout);
   document.getElementById("blocked").textContent = blocked.toLocaleString();
   document.getElementById("blocked-label").textContent = `ads and trackers blocked${since ? " since " + new Date(since).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}`;
   document.getElementById("time-saved").textContent = duration(blocked * 50);
