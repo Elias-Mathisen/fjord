@@ -31,7 +31,8 @@
   }
 
   main { position: relative; height: 100%; display: grid; place-content: center; text-align: center;
-    padding-bottom: 12vh; user-select: none; text-shadow: 0 2px 24px rgb(0 0 0 / 0.45); }
+    padding-bottom: 12vh; user-select: none; text-shadow: 0 2px 24px rgb(0 0 0 / 0.45);
+    pointer-events: none; } /* it fills the page and sits above Customize, so clicks go through to the buttons */
   #time { display: flex; justify-content: center; align-items: baseline;
     font-size: clamp(64px, 11vw, 136px); font-weight: 200; line-height: 1.15; letter-spacing: -0.03em;
     font-variant-numeric: tabular-nums; }

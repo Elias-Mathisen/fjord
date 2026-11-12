@@ -497,9 +497,6 @@
     const artBox = h("div", { class: "ns-setup-art" }, cabin, jetty);
     const overlay = openOverlay("Fjord setup",
       h("div", { class: "ns-card ns-setup" }, artBox, h("div", { class: "ns-setup-main" }, dots, body)));
-    // Each step frames the drawing a little further along, as if walking up to the cabin: [zoom, x %, y %].
-    // The last one is for the final step, however many steps come before it.
-    const FRAMING = [[1.12, 4, 3], [1.09, 2, 1.5], [1.07, 0, 0], [1.05, -1.5, -1], [1.03, -3, -2], [1.02, -4, -2.5], [1.06, 0, 0]];
     let step = 0;
     function nav() {
       return h("div", { class: "ns-actions ns-step-actions" }, btn("ns-link ns-back", "Back", back), btn("ns-primary", "Continue", next));
@@ -515,8 +512,6 @@
       body.querySelectorAll(".ns-end > *").forEach((c, n) => c.style.setProperty("--i", Math.min(n + 1, 6)));
       body.querySelectorAll(":is(.ns-tiles, .ns-options, .ns-pills, .ns-sources) > button")
         .forEach((b, n) => b.style.setProperty("--j", Math.min(n, 7)));
-      const [zoom, x, y] = i === steps.length - 1 ? FRAMING.at(-1) : FRAMING[i] ?? FRAMING.at(-2);
-      for (const img of [cabin, jetty]) img.style.transform = `scale(${zoom}) translate(${x}%, ${y}%)`;
       artBox.toggleAttribute("done", i === steps.length - 1);
       body.querySelector(".ns-primary")?.focus();
     }
