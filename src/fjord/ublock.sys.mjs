@@ -47,6 +47,19 @@ export async function addExtraLists() {
   return true;
 }
 
+// Turns filter lists on or off (Calm web's annoyance lists). Resolves false while uBlock isn't ready yet.
+export async function setLists(on, keys) {
+  const ext = extension();
+  const db = ext && await storage(ext);
+  const lists = db && (await db.get(["selectedFilterLists"])).selectedFilterLists;
+  if (!lists) return false;
+  const next = on ? [...new Set([...lists, ...keys])] : lists.filter(k => !keys.includes(k));
+  if (next.length === lists.length && next.every(k => lists.includes(k))) return true;
+  await db.set({ selectedFilterLists: next });
+  await restart();
+  return true;
+}
+
 // Sites where uBlock is switched off (its "trusted sites" list)
 async function whitelist() {
   const ext = extension();

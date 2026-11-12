@@ -23,6 +23,12 @@
       win.customElements.whenDefined("splitview-opentabs").then(() => doc.querySelector("splitview-opentabs")?.shadowRoot?.prepend(sheet()));
       return;
     }
+    // Calm web (calm.sys.mjs; features/calm.js has the switches): the tab's page, unless switched off for its site
+    if (win && !win.browsingContext?.parent && /^https?:$/.test(win.location.protocol) && Services.prefs.getBoolPref("fjord.calm.enabled", true)
+      && !Services.prefs.getStringPref("fjord.calm.off", "").split(",").includes(siteOf(win.location.hostname))) {
+      ChromeUtils.importESModule("resource://fjord/calm.sys.mjs").calm(win, n => sendAsyncMessage("Fjord:Calm", { n, url: doc.documentURI }));
+      return;
+    }
     const code = /^about:neterror\?e=(\w+)/.exec(doc.documentURI)?.[1];
     if (!win || win.browsingContext?.parent || !code || !doc.body) return; // the tab's page, not a frame in it
     if (code !== "netOffline" && !(["dnsNotFound", "netTimeout", "connectionFailure", "netReset"].includes(code) && !win.navigator.onLine)) return;

@@ -794,3 +794,7 @@
 
   /* A sleeping tab's preview card: asleep, and about how much memory it freed (features/memory.js) */
   .ns-asleep-note { color: var(--n-muted); font-size: 0.9em; margin-top: 4px; }
+
+  /* Settings > Calm web: what it takes out */
+  .ns-calm-list { margin: 0 0 12px; padding-inline-start: 20px; display: grid; gap: 6px; color: var(--n-muted); }
+  .ns-calm-list b { color: var(--n-text); font-weight: 600; }

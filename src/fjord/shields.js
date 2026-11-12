@@ -187,6 +187,12 @@
         dial(host, level),
         await label(host, up),
       );
+      // Calm web (features/calm.js): what it took out of this page, and a switch for the site
+      if (Fjord.calm?.enabled()) {
+        const site = privacy.baseDomain(host), removed = Fjord.calm.count(gBrowser.selectedBrowser);
+        kids.push(toggle(removed ? `Calm web: ${removed === 1 ? "1 nudge" : `${removed} nudges`} taken out` : "Calm web",
+          Fjord.calm.isOn(site), on => { panel.hidePopup(); Fjord.calm.setHere(site, on); }));
+      }
       if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
         const ghost = prefs.getStringPref("fjord.protection", "balanced") === "ghost";
         if (level !== "lockdown") kids.push(ghost
