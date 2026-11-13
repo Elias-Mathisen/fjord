@@ -1,4 +1,8 @@
 {
+  "3.0.1": [
+    "Windows: a new installer in Fjord's look. It can't be closed halfway through, retries a download that stalls, and tells you clearly if something went wrong.",
+    "Windows: uninstalling closes Fjord for you if it's open, lets you choose whether to keep your bookmarks and passwords, and removes every shortcut and every trace of Fjord in Windows' settings."
+  ],
   "3.0.0": [
     "Calm web: besides ads and trackers, Fjord now takes out what pages use to pressure you: fake urgency like “Only 2 left”, countdowns next to offers, guilt-trip buttons, email and chat pop-ups, and videos that play on their own. Turn it off for one site in Shields, or everywhere in Settings › Calm web.",
     "Sync through a folder you already have, like iCloud Drive, Dropbox, OneDrive or a USB stick, not just over your home Wi-Fi. Each device writes its own encrypted file, so the folder only ever holds scrambled data. Passwords and settings now sync between your computers too. Still no account and no server.",
