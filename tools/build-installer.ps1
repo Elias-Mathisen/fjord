@@ -46,7 +46,7 @@ $out = Join-Path $dist 'FjordSetup.exe'
 & $csc /nologo /target:winexe /optimize+ /out:$out /win32icon:"$core\fjord\fjord.ico" `
     /r:"$wpf\PresentationFramework.dll" /r:"$wpf\PresentationCore.dll" /r:"$wpf\WindowsBase.dll" /r:System.Xaml.dll `
     /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll /r:Microsoft.CSharp.dll /r:System.Core.dll `
-    /resource:"$zip,payload.zip" /resource:"$root\src\fjord\branding\logo.png,logo.png" /resource:"$PSScriptRoot\installer\cabin.jpg,cabin.jpg" `
+    /resource:"$zip,payload.zip" /resource:"$root\src\fjord\branding\logo.png,logo.png" /resource:"$PSScriptRoot\installer\fjord-wide.jpg,fjord-wide.jpg" `
     $keyResource (Join-Path $PSScriptRoot 'installer\FjordSetup.cs') $info
 if ($LASTEXITCODE) { throw 'Compiling the installer failed' }
 Remove-Item $stage -Recurse -Force
