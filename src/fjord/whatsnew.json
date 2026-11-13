@@ -1,4 +1,8 @@
 {
+  "3.0.3": [
+    "Firefox's own pages, like Settings and the Protections Dashboard, now use Fjord's blue instead of Firefox's purple, with Fjord's shield and logo.",
+    "Settings no longer show Firefox Labs or Mozilla's Sync, which Fjord doesn't use. Fjord syncs on its own, in Fjord's settings."
+  ],
   "3.0.2": [
     "New tab: 48 new photos, from coral reefs and sea turtles to cars, waves, deserts, wildlife and city skylines, and every photo is now sharper. Fjord fetches the new versions once, in the background.",
     "YouTube: one click in or out of the private player, with the button in the address bar: “Watch privately” on YouTube, “Open on YouTube” in the player.",

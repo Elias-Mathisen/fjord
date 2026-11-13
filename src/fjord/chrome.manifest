@@ -19,3 +19,9 @@ override chrome://activity-stream/content/data/content/assets/splash-logo.svg br
 content fjord ./
 # The picture-in-picture button over videos, in Fjord's look (pipToggle.css)
 override chrome://global/skin/media/pipToggle.css pipToggle.css
+# Fjord's blue shields on about:protections and in settings › Privacy, and Fjord's logo next to "About Fjord" in Firefox's settings
+override chrome://browser/content/logos/tracking-protection.svg branding/shield.svg
+override chrome://browser/content/logos/tracking-protection-dark-theme.svg branding/shield.svg
+override chrome://browser/skin/sidebar/firefox.svg branding/logo.png
+override chrome://global/skin/illustrations/shield-check.svg branding/shield.svg
+override chrome://global/skin/illustrations/shield-alert.svg branding/shield-alert.svg
