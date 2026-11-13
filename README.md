@@ -1,37 +1,80 @@
-# Fjord
+<p align="center">
+  <img src="docs/assets/logo.png" width="96" height="96" alt="">
+</p>
 
-A private browser built on Firefox. Ads and trackers are blocked from the first page you open, there's no telemetry,
-and the settings explain what each choice costs.
+<h1 align="center">Fjord</h1>
+
+<p align="center">
+  <b>A private browser built on Firefox.</b><br>
+  Ads, trackers and the tricks pages use to rush you are gone from the first page you open.<br>
+  No account, no telemetry, nothing about you collected.
+</p>
+
+<p align="center">
+  <a href="https://github.com/Elias-Mathisen/fjord/releases/latest/download/Fjord.dmg"><b>Download for Mac</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/Elias-Mathisen/fjord/releases/latest/download/FjordSetup.exe"><b>Download for Windows</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/Elias-Mathisen/fjord/releases/latest"><b>Linux</b></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Elias-Mathisen/fjord/releases/latest"><img src="https://img.shields.io/github/v/release/Elias-Mathisen/fjord?label=version&color=1d1d1f" alt="Latest version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MPL%202.0-1d1d1f" alt="License: MPL 2.0"></a>
+</p>
+
+![Fjord's new tab: a landscape photo, the time, and how many ads and trackers were blocked](docs/assets/newtab.jpg)
 
 Fjord isn't a fork: it's the official Firefox from Mozilla, set up with Firefox's own configuration files
-(`Fjord.cfg`, `policies.json`) and a layer of window scripts and styles in `src/fjord/`. That's why it can
-follow every Firefox security update the day it ships.
+(`Fjord.cfg`, `policies.json`) and a layer of window scripts and styles in `src/fjord/`. That's why it gets every
+Firefox security fix the day it ships.
 
-## What's in it
+## Calm web
 
-- **Shields** in the address bar: a protection dial per site (Off, Standard, Strict, Lockdown) and which companies the
-  page tried to share your visit with, and **Forget this site now**
+Blocking ads is where most private browsers stop. Fjord also takes out what a page uses to pressure you: fake
+urgency ("Only 2 left", "14 people are looking at this"), countdowns next to offers, guilt-trip buttons ("No thanks,
+I don't like saving money" just says "No thanks"), email and chat pop-ups, and videos that play on their own. It all
+happens on your computer, and you can turn it off for one site in Shields.
+
+![Settings, Calm web: a switch and a list of what it takes out of pages](.github/readme/calm-web.jpg)
+
+## Private from the first page
+
+- **Shields** in the address bar: a protection dial per site, which companies the page tried to share your visit
+  with, and **Forget this site now**
 - uBlock Origin built in, Firefox's strict tracker blocking, fingerprinting protection, HTTPS-only, Secure DNS (Quad9)
-- **Ghost mode** (forget everything on close, with per-site exceptions), **Mist tabs** (throwaway tabs)
-- Warnings for **lookalike sites** (paypa1.com), **clipboard hijacking**, sites using your camera, microphone or location
-- **Skips tracking redirects** (google.com/url?q=…), **App lock** with Windows Hello / Touch ID
 - **Randomised fingerprint**: made-up canvas, WebGL and audio readings, different for every site and every session
-- **Private YouTube player** (YouTube's privacy-enhanced player, no recommendations or watch history) and
-  **Hide this** for cookie walls, sidebars and pop-ups
-- **Command bar** (Ctrl+K) for tabs, bookmarks, history and Fjord's actions, and **link preview** (Shift-click)
+- **Ghost mode** (forget everything on close, with per-site exceptions) and **Mist tabs** (throwaway tabs)
+- Warnings for **lookalike sites** (paypa1.com), **clipboard hijacking**, and sites using your camera, microphone or
+  location
+- **Skips tracking redirects** (google.com/url?q=…) and strips tracking codes from links
+- **Private YouTube player**: YouTube's privacy-enhanced player, without recommendations or watch history
 - **Privacy report**: week by week, which companies tried to track you and on which sites, counted on your computer
-  and never sent anywhere (also on iPhone)
+  and never sent anywhere
 - **Fjord's connections**: a live list of every connection Fjord itself makes
+
+![Settings, Privacy: three protection levels, what the chosen one does, and switches for more protections](.github/readme/settings-privacy.jpg)
+
+## Yours in a minute
+
+A short setup when you first open Fjord: bring over your bookmarks and passwords, pick light or dark and where your
+tabs go, how strict to be and which search engine to use. Everything is already protected before you pick anything.
+
+![Fjord's first-time setup: a drawing of a fjord and a cabin, "Welcome to Fjord", and what's already on](.github/readme/setup.jpg)
+
+## And the rest
+
+- **Sync** with your iPhone over the home Wi-Fi, and with your other devices through a folder you already have
+  (iCloud Drive, Dropbox, a USB stick), sealed with the pairing's key. Computers also share passwords and settings.
+  No account, no server
 - **Spaces**: separate sets of tabs like Work and Personal, each with its own colour and sign-ins
-- **Tab folders** (Firefox's tab groups), minimal: a name and a line in the folder's colour; click the name to fold it away
-- **Split view**: two tabs side by side, from a tab's right-click menu, a link's, or the command bar
-- **Sync** with your iPhone over the home Wi-Fi, and with your other devices through a folder you choose (iCloud Drive,
-  Dropbox, a USB stick), sealed with the pairing's key; computers also share passwords and settings. No account, no server
-- **Calm web**: takes out fake urgency ("Only 2 left"), offer countdowns, guilt-trip buttons, pop-ups and autoplaying video; off per site in Shields
-- Sidebar apps (Spotify, WhatsApp…), Memory saver, design tools (colour picker, font finder, asset saver,
-  full-page screenshots)
-- A new tab with 100 hand-picked Unsplash photos (or your own picture) and privacy stats, reader view in Fjord's font, and a ski jump game
-  when you're offline
+- **Split view**, **tab folders**, a **command bar** (Ctrl+K) for tabs, bookmarks, history and Fjord's actions, and
+  **link preview** (Shift-click)
+- **App lock** with Windows Hello or Touch ID
+- **Sidebar apps** (Spotify, WhatsApp…), **Memory saver**, and **design tools** (colour picker, font finder, asset
+  saver, full-page screenshots)
+- A new tab with 100 hand-picked Unsplash photos (or your own picture), reader view in Fjord's font, **Hide this** for
+  cookie walls and pop-ups, and a ski jump game when you're offline
 
 ## Layout
 
