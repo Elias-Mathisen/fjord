@@ -1,4 +1,8 @@
 {
+  "3.0.4": [
+    "Firefox's fox is gone from everywhere it showed up, like Settings, private windows, Add-ons, the sidebar and tips, and Fjord's mountains are there instead.",
+    "Settings start on General: no more empty Mozilla account section."
+  ],
   "3.0.3": [
     "Firefox's own pages, like Settings and the Protections Dashboard, now use Fjord's blue instead of Firefox's purple, with Fjord's shield and logo.",
     "Settings no longer show Firefox Labs or Mozilla's Sync, which Fjord doesn't use. Fjord syncs on its own, in Fjord's settings."

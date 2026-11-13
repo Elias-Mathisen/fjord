@@ -19,4 +19,7 @@
 /* Settings: no Firefox Labs, and no Sync (Fjord has no Mozilla account; it syncs on its own, in Fjord's settings) */
 @-moz-document url-prefix("about:preferences"), url-prefix("about:settings") {
   #category-experimental, #category-sync { display: none !important; }
+  /* the Mozilla account card ("Account settings are unavailable") */
+  setting-control[id*="fxa" i], moz-fieldset#fxaAccountDisabled,
+  setting-group:is([groupid="accountDisabled"], [groupid="account"], [groupid="sync"]) { display: none !important; }
 }
