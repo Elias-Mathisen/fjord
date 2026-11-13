@@ -1,7 +1,9 @@
 # Downloads Fjord's new-tab photos (listed in tools\photos.txt) into src\fjord\photos\ and writes photos.js (credits).
 # Photos are from Unsplash under the Unsplash License (free to use, credit appreciated).
 # Bundled so the new tab never contacts a server. Run only when the photo list changes.
-param([int]$Width = 3840)  # 4K wide, so they stay sharp on big and high-DPI screens
+# The first photo comes with Fjord as photo-001.jpg; the rest are named after their Unsplash image (u-<id>.jpg), so
+# installed copies that downloaded them before keep the right photo with the right credit when the list changes.
+param([int]$Width = 3840, [int]$Quality = 90)  # 4K wide at high quality, sharp on big and high-DPI screens
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Add-Type -AssemblyName System.Drawing
@@ -16,8 +18,8 @@ $i = 0
 foreach ($line in $photos) {
     $img, $id, $by = $line -split '\|', 3
     $i++
-    $file = 'photo-{0:D3}.jpg' -f $i
-    $src = "https://images.unsplash.com/photo-$img`?w=$Width&q=82&fm=jpg&fit=max"
+    $file = if ($i -eq 1) { 'photo-001.jpg' } else { "u-$img.jpg" }
+    $src = "https://images.unsplash.com/photo-$img`?w=$Width&q=$Quality&fm=jpg&fit=max"
     $wc.DownloadFile($src, "$out\$file")
     # Dark or light by average brightness, so the new tab can match the theme
     $bmp = [Drawing.Image]::FromFile("$out\$file")

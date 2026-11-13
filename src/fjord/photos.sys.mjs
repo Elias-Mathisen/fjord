@@ -1,5 +1,5 @@
 // The new-tab photos. One comes with Fjord (photos/photo-001.jpg, so the download stays small and the new tab has a
-// photo offline); the other 99 are downloaded from Unsplash once, in the background, into the profile's
+// photo offline); the rest are downloaded from Unsplash once, in the background, into the profile's
 // fjord-photos folder, where newtab.html looks first. New tabs never contact Unsplash themselves. One photo at a time,
 // a minute after Fjord starts, and only ones still missing; a failed one is tried again next time. Nothing is
 // downloaded while the new tab's photos are switched off.
@@ -22,8 +22,13 @@ async function run() {
   const text = await IOUtils.readUTF8(PathUtils.join(fjord, "photos.js"));
   const list = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
   const photos = [...list.dark, ...list.light].map(p => ({ name: p.file.replace(/^photos\//, ""), src: p.src }))
-    .filter(p => p.name !== BUNDLED && /^photo-\d{3}\.jpg$/.test(p.name) && /^https:\/\/images\.unsplash\.com\//.test(p.src));
+    .filter(p => p.name !== BUNDLED && /^u-[\w-]+\.jpg$/.test(p.name) && /^https:\/\/images\.unsplash\.com\//.test(p.src));
   await IOUtils.makeDirectory(dir, { ignoreExisting: true });
+  // Before 3.0.2 they were numbered (photo-002.jpg…) at lower quality: those copies go, the new ones replace them.
+  // Your own picture (own-*) and anything else in the folder stays.
+  for (const path of await IOUtils.getChildren(dir)) {
+    if (/^photo-\d{3}\.jpg$/.test(PathUtils.filename(path))) await IOUtils.remove(path).catch(() => {});
+  }
   for (const p of photos) {
     if (!Services.prefs.getBoolPref("fjord.newtab.photos", true)) return;
     const target = PathUtils.join(dir, p.name);

@@ -1,0 +1,26 @@
+/* The popped-out video window (pip.js): its top buttons as dark frosted circles in Fjord's look, and the pin that
+   keeps the window on top, next to them at the top right. Pinned, it turns white. */
+:root { --close-btn-fill-color: #ffffff; }
+#close, #unpip, #fjord-pin {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background-color: rgba(22, 22, 24, 0.72);
+  backdrop-filter: blur(12px) saturate(1.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+}
+#close:is(:hover, :focus-visible), #unpip:is(:hover, :focus-visible), #fjord-pin:is(:hover, :focus-visible) {
+  background-color: rgba(22, 22, 24, 0.92);
+}
+#fjord-pin {
+  position: absolute;
+  top: 10px;
+  right: calc(10px + var(--player-control-item-height) + 8px);
+  background-image: url("resource://fjord/illustrations/icons/pin.svg");
+  background-size: 54%;
+  -moz-context-properties: stroke;
+  stroke: #ffffff;
+}
+#fjord-pin[pinned] { background-color: rgba(255, 255, 255, 0.92); stroke: #1d1d1f; }
+#fjord-pin[pinned]:is(:hover, :focus-visible) { background-color: #ffffff; }
+#fjord-pin:hover::after { float: right; transform: translateX(1em); }

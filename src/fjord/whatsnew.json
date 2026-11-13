@@ -1,4 +1,10 @@
 {
+  "3.0.2": [
+    "New tab: 48 new photos, from coral reefs and sea turtles to cars, waves, deserts, wildlife and city skylines, and every photo is now sharper. Fjord fetches the new versions once, in the background.",
+    "YouTube: one click in or out of the private player, with the button in the address bar: “Watch privately” on YouTube, “Open on YouTube” in the player.",
+    "Popped-out videos have a pin at the top right: keep them on top of other windows, or let them go behind. The pop-out button and the full-screen notice now look like the rest of Fjord.",
+    "The “What’s new” window after an update fits on any screen, however many updates it covers."
+  ],
   "3.0.1": [
     "Windows: a new installer in Fjord's look. It can't be closed halfway through, retries a download that stalls, and tells you clearly if something went wrong.",
     "Windows: uninstalling closes Fjord for you if it's open, lets you choose whether to keep your bookmarks and passwords, and removes every shortcut and every trace of Fjord in Windows' settings."

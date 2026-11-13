@@ -48,7 +48,8 @@ happens on your computer, and you can turn it off for one site in Shields.
 - Warnings for **lookalike sites** (paypa1.com), **clipboard hijacking**, and sites using your camera, microphone or
   location
 - **Skips tracking redirects** (google.com/url?q=…) and strips tracking codes from links
-- **Private YouTube player**: YouTube's privacy-enhanced player, without recommendations or watch history
+- **Private YouTube player**: YouTube's privacy-enhanced player, without recommendations or watch history, one click
+  in or out from the address bar
 - **Privacy report**: week by week, which companies tried to track you and on which sites, counted on your computer
   and never sent anywhere
 - **Fjord's connections**: a live list of every connection Fjord itself makes
@@ -68,12 +69,13 @@ tabs go, how strict to be and which search engine to use. Everything is already 
   (iCloud Drive, Dropbox, a USB stick), sealed with the pairing's key. Computers also share passwords and settings.
   No account, no server
 - **Spaces**: separate sets of tabs like Work and Personal, each with its own colour and sign-ins
+- **Pop-out videos** that stay on top of other windows, or not, with a pin
 - **Split view**, **tab folders**, a **command bar** (Ctrl+K) for tabs, bookmarks, history and Fjord's actions, and
   **link preview** (Shift-click)
 - **App lock** with Windows Hello or Touch ID
 - **Sidebar apps** (Spotify, WhatsApp…), **Memory saver**, and **design tools** (colour picker, font finder, asset
   saver, full-page screenshots)
-- A new tab with 100 hand-picked Unsplash photos (or your own picture), reader view in Fjord's font, **Hide this** for
+- A new tab with 160 hand-picked 4K Unsplash photos, from fjords to coral reefs and cars (or your own picture), reader view in Fjord's font, **Hide this** for
   cookie walls and pop-ups, and a ski jump game when you're offline
 
 ## Layout

@@ -17,3 +17,5 @@ override chrome://branding/content/icon128.png branding/logo.png
 override chrome://activity-stream/content/data/content/assets/splash-logo.svg branding/logo.png
 # chrome://fjord/content/ = this folder, for pages that need Firefox's privileges (the sidebar apps' webpanel.html)
 content fjord ./
+# The picture-in-picture button over videos, in Fjord's look (pipToggle.css)
+override chrome://global/skin/media/pipToggle.css pipToggle.css
