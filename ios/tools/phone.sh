@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds Fjord signed for the iPhone plugged into (or paired with) this Mac, installs it and opens it.
+# Builds Fjord signed for the iPhone or iPad plugged into (or paired with) this Mac, installs it and opens it.
 #   sh ios/tools/phone.sh              run it in Terminal on the Mac
 # Signing needs the login keychain, which an SSH session can't use; the io.github.eliasmathisen.fjord.phone
 # LaunchAgent (sh ios/tools/phone.sh --agent, once) runs this inside the logged-in session instead, so it can be
@@ -29,8 +29,8 @@ EOF
   exit 0
 fi
 
-DEVICE=$(xcrun devicectl list devices 2>/dev/null | awk '/physical/ && /connected|available/ && /iPhone/ { for (i = 1; i <= NF; i++) if ($i ~ /^[0-9A-F]{8}-[0-9A-F]{16}$/) { print $i; exit } }')
-[ -n "$DEVICE" ] || { echo "No iPhone connected: plug it in and unlock it." >&2; exit 1; }
+DEVICE=$(xcrun devicectl list devices 2>/dev/null | awk '/ (connected|available)( |$)/ && /iPhone|iPad/ { for (i = 1; i <= NF; i++) if ($i ~ /^[0-9A-F]{8}-[0-9A-F]{16}$/) { print $i; exit } }')
+[ -n "$DEVICE" ] || { echo "No iPhone or iPad connected: plug it in and unlock it." >&2; exit 1; }
 echo "== $(date) building for $DEVICE"
 cd "$IOS"
 python3 tools/prepare.py
