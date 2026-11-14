@@ -29,7 +29,7 @@ EOF
   exit 0
 fi
 
-DEVICE=$(xcrun devicectl list devices 2>/dev/null | awk '/physical/ && /connected/ && /iPhone/ { for (i = 1; i <= NF; i++) if ($i ~ /^[0-9A-F]{8}-[0-9A-F]{16}$/) { print $i; exit } }')
+DEVICE=$(xcrun devicectl list devices 2>/dev/null | awk '/physical/ && /connected|available/ && /iPhone/ { for (i = 1; i <= NF; i++) if ($i ~ /^[0-9A-F]{8}-[0-9A-F]{16}$/) { print $i; exit } }')
 [ -n "$DEVICE" ] || { echo "No iPhone connected: plug it in and unlock it." >&2; exit 1; }
 echo "== $(date) building for $DEVICE"
 cd "$IOS"
