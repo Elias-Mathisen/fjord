@@ -2,14 +2,6 @@
 // Loaded into every browser window by Fjord.cfg; the Shields button lives in shields.js.
 (() => {
   window.windowUtils.loadSheetUsingURIString("resource://fjord/chrome.css", window.windowUtils.AUTHOR_SHEET);
-  // Windows shows Firefox's icon in the title bar, Alt+Tab and taskbar previews unless the window is given ours
-  // (Firefox no longer reads chrome\icons\default\main-window.ico for its windows)
-  if (AppConstants.platform == "win") {
-    fetch("resource://fjord/branding/logo.png").then(r => r.arrayBuffer()).then(buf => {
-      const img = Cc["@mozilla.org/image/tools;1"].getService(Ci.imgITools).decodeImageFromArrayBuffer(buf, "image/png");
-      Cc["@mozilla.org/windows-ui-utils;1"].getService(Ci.nsIWindowsUIUtils).setWindowIcon(window, img, img);
-    }).catch(console.error);
-  }
   if (!window.toolbar.visible) return; // popup windows get no extras
 
   const { PrivateBrowsingUtils } = ChromeUtils.importESModule("resource://gre/modules/PrivateBrowsingUtils.sys.mjs");
