@@ -1,4 +1,4 @@
-// The first-time setup: history, a search engine and a couple of extras, over a new-tab photo at the start and end
+// The first-time setup: light or dark, history, a search engine and a couple of extras, over a new-tab photo at the start and end
 // like Fjord's new tab. Every choice is saved as it's made, to the same settings as Fjord's settings screen, so
 // Skip leaves things as they were. Settings > Run setup again shows it again.
 import SwiftUI
@@ -11,10 +11,12 @@ struct SetupView: View {
     @AppStorage(Setting.engine) private var engine = "DuckDuckGo"
     @AppStorage(Setting.appLock) private var appLock = false
     @AppStorage(Setting.youtube) private var youtube = false
+    @AppStorage(Setting.appearance) private var appearance = Appearance.automatic
     @State private var step = 0
     @State private var forward = true
     @State private var photo = Photo.all.randomElement()
-    private let last = 4
+    private let last = 5
+    private let device = UIDevice.current.model // iPhone or iPad
 
     init() {
         #if DEBUG // Simulator tests: -FjordSetupStep <n> starts on that step
@@ -38,9 +40,10 @@ struct SetupView: View {
             Group {
                 switch step {
                 case 0: welcome
-                case 1: page("History", "The address bar can suggest sites you've been to as you type. History stays on this iPhone.") { historyChoices }
-                case 2: page("Search engine", "Used when you search from the address bar.") { engines }
-                case 3: page("A few more", "You can change these and everything else in Fjord's settings.") { extras }
+                case 1: page("Appearance", "Light or dark, for Fjord's bars, menus and settings. Sites that have a dark mode follow it too.") { appearances }
+                case 2: page("History", "The address bar can suggest sites you've been to as you type. History stays on this \(device).") { historyChoices }
+                case 3: page("Search engine", "Used when you search from the address bar.") { engines }
+                case 4: page("A few more", "You can change these and everything else in Fjord's settings.") { extras }
                 default: done
                 }
             }
@@ -160,6 +163,14 @@ struct SetupView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))
+    }
+
+    private var appearances: some View {
+        VStack(spacing: 10) {
+            choice(appearance == .automatic, "Automatic", "Light by day and dark at night, or however your \(device) is set.", "circle.lefthalf.filled") { appearance = .automatic }
+            choice(appearance == .light, "Light", "Always light.", "sun.max") { appearance = .light }
+            choice(appearance == .dark, "Dark", "Always dark.", "moon") { appearance = .dark }
+        }
     }
 
     private var historyChoices: some View {

@@ -258,6 +258,34 @@ final class Tab: NSObject, ObservableObject, Identifiable {
         webView.load(Privacy.youtubePlayer(video))
     }
 
+    // The pill above the address bar: from the private player to YouTube's own page and back, at the same moment in
+    // the video. Watching privately works for one video with the private player switched off too.
+    enum YouTubeSwitch { case toYouTube, toPlayer }
+    var inPlayer: Bool { url.flatMap(Cast.video(inPlayer:)) != nil }
+    var youtubeSwitch: YouTubeSwitch? {
+        guard let url else { return nil }
+        if Cast.video(inPlayer: url) != nil { return .toYouTube }
+        return Privacy.youtubeVideo(url) != nil ? .toPlayer : nil
+    }
+    func switchYouTube() {
+        guard let url, let video = Cast.video(inPlayer: url) ?? Privacy.youtubeVideo(url) else { return }
+        let toYouTube = Cast.video(inPlayer: url) != nil
+        webView.evaluateJavaScript("Math.floor(document.querySelector('video')?.currentTime || 0)") { [weak self] time, _ in
+            Task { @MainActor in
+                guard let self else { return }
+                let now = (time as? NSNumber)?.intValue ?? 0
+                let start = now > 0 ? now : video.start
+                if toYouTube {
+                    self.onYouTube = true // so it isn't sent straight back to the player
+                    self.load(URL(string: "https://m.youtube.com/watch?v=\(video.id)" + (start > 0 ? "&t=\(start)s" : ""))!)
+                } else {
+                    self.onYouTube = false
+                    self.webView.load(Privacy.youtubePlayer((video.id, start)))
+                }
+            }
+        }
+    }
+
     // From the fake-site warning
     func openAnyway() {
         guard let warning else { return }

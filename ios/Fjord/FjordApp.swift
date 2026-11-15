@@ -64,6 +64,7 @@ struct RootView: View {
     @EnvironmentObject var browser: Browser
     @EnvironmentObject var lock: AppLock
     @AppStorage(Setting.setupDone) private var setupDone = false
+    @AppStorage(Setting.appearance) private var appearance = Appearance.automatic
     var body: some View {
         ZStack {
             BrowserView()
@@ -83,6 +84,16 @@ struct RootView: View {
         }
         .tint(.primary)
         .font(.fjord(.body)) // Geist for everything that doesn't pick its own size
+        .onAppear { applyAppearance() }
+        .onChange(of: appearance) { applyAppearance() }
+    }
+
+    // On the window rather than with preferredColorScheme, so sheets, menus and the web pages' own dark mode follow it
+    private func applyAppearance() {
+        let style: UIUserInterfaceStyle = appearance == .light ? .light : appearance == .dark ? .dark : .unspecified
+        for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
+            for window in scene.windows { window.overrideUserInterfaceStyle = style }
+        }
     }
 }
 

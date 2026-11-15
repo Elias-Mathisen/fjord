@@ -16,12 +16,19 @@ enum Setting {
     static let unlockScroll = "hiddenUnlocksScroll" // sites where a hidden part covered the page
     static let history = "keepHistory"          // the sites you've been to, for the address bar's suggestions
     static let setupDone = "setupDone"          // the first-time setup was finished or skipped
+    static let appearance = "appearance"        // Appearance.rawValue: light, dark, or the device's own setting
 
     static func register() {
         UserDefaults.standard.register(defaults: [blocking: true, redirects: true, lookalikes: true, ghost: false,
                                                   engine: "DuckDuckGo", appLock: false, randomise: true, youtube: false,
-                                                  history: true])
+                                                  history: true, appearance: Appearance.automatic.rawValue])
     }
+}
+
+enum Appearance: String, CaseIterable, Identifiable {
+    case automatic, light, dark
+    var id: String { rawValue }
+    var name: String { rawValue.capitalized }
 }
 
 // Parts of sites you hid (Shields > Hide part of this page), by base domain like Shields

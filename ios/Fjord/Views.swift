@@ -147,11 +147,13 @@ struct PageView: View {
     @EnvironmentObject var browser: Browser
     @ObservedObject var tab: Tab
     @Binding var sheet: BrowserView.Sheet?
+    @State private var barHeight: CGFloat = 0
 
     var body: some View {
         ZStack(alignment: .bottom) {
             if tab.isNewTab { NewTabView(photo: tab.photo, sheet: $sheet).transition(.opacity) }
-            // The page runs under the bottom bar, as in Safari, so shrinking the bar shows more of it
+            // The page runs under the bottom bar, as in Safari, so shrinking the bar shows more of it. Not the private
+            // YouTube player: it fills exactly the screen and doesn't scroll, so its controls would sit under the bar.
             ZStack {
                 WebView(webView: tab.webView)
                     .opacity(tab.isNewTab ? 0 : 1)
@@ -159,9 +161,11 @@ struct PageView: View {
                 if let warning = tab.warning { LookalikeView(tab: tab, warning: warning) }
                 else if let error = tab.error { ErrorView(tab: tab, message: error) }
             }
-            .ignoresSafeArea(edges: .bottom)
+            .padding(.bottom, tab.inPlayer ? barHeight : 0)
+            .ignoresSafeArea(edges: tab.inPlayer ? [] : .bottom)
             BottomBar(tab: tab, sheet: $sheet)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                    barHeight = height
                     // The page can scroll its end above the full bar; that end brings the bar back anyway
                     guard !tab.barCollapsed else { return }
                     tab.webView.scrollView.contentInset.bottom = height
@@ -226,6 +230,7 @@ struct BottomBar: View {
 
     var body: some View {
         VStack(spacing: 10) {
+            if !editing && !collapsed, let to = tab.youtubeSwitch { youtubeSwitch(to) }
             HStack(alignment: .bottom, spacing: 12) { // Cancel stays beside the line you type on as the panel grows
                 field
                 if editing {
@@ -287,6 +292,22 @@ struct BottomBar: View {
     private func open(_ url: URL) {
         browser.open(url)
         editing = false
+    }
+
+    // Over a YouTube video: to the private player, or from it back to YouTube's own page
+    private func youtubeSwitch(_ to: Tab.YouTubeSwitch) -> some View {
+        Button { tab.switchYouTube() } label: {
+            Label(to == .toYouTube ? "Open on YouTube" : "Watch privately",
+                  systemImage: to == .toYouTube ? "play.rectangle" : "lock.shield")
+                .font(.fjord(.subheadline).weight(.semibold))
+                .padding(.horizontal, 16)
+                .frame(height: 38)
+                .fjordGlass(Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(PressScale())
+        .transition(.opacity)
+        .accessibilityHint(to == .toYouTube ? "Opens this video on YouTube's own page" : "Plays this video in Fjord's private player")
     }
 
     // The field grows upward into one panel while you type: the matching sites sit inside it, above the text, with the
@@ -670,11 +691,12 @@ struct WeekBars: View {
     let week: [(date: Date, count: Int)]
     var body: some View {
         let most = max(1, week.map(\.count).max() ?? 1)
-        HStack(alignment: .bottom, spacing: 8) {
+        HStack(alignment: .bottom, spacing: 6) {
             ForEach(Array(week.enumerated()), id: \.offset) { _, day in
                 VStack(spacing: 4) {
-                    Capsule().fill(.white.opacity(Calendar.current.isDateInToday(day.date) ? 0.95 : 0.55))
-                        .frame(width: 6, height: max(3, 26 * CGFloat(day.count) / CGFloat(most)))
+                    // Like the computer's: a block filling its day's width with slightly rounded corners, not a thin line
+                    RoundedRectangle(cornerRadius: 3, style: .continuous).fill(.white.opacity(Calendar.current.isDateInToday(day.date) ? 0.95 : 0.45))
+                        .frame(height: max(3, 26 * CGFloat(day.count) / CGFloat(most)))
                     Text(day.date, format: .dateTime.weekday(.narrow)).font(.fjord(size: 10, weight: .medium)).foregroundStyle(.white.opacity(0.7))
                 }
                 .frame(maxWidth: .infinity)
@@ -824,7 +846,8 @@ struct ReportBars: View {
 // or tap ✕ to close it
 struct TabsView: View {
     @EnvironmentObject var browser: Browser
-    private let columns = [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+    // Two on an iPhone held upright; as many as fit on an iPad or sideways, so the cards stay phone-sized
+    private let columns = [GridItem(.adaptive(minimum: 150, maximum: 210), spacing: 16)]
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -1124,6 +1147,7 @@ struct SettingsView: View {
     @AppStorage(Setting.youtube) private var youtube = false
     @AppStorage(Setting.history) private var history = true
     @AppStorage(Setting.setupDone) private var setupDone = false
+    @AppStorage(Setting.appearance) private var appearance = Appearance.automatic
     @State private var sitesOff = Shields.sitesOff
     @State private var hiddenSites = Hidden.sites
     @State private var confirmClear = false
@@ -1165,6 +1189,12 @@ struct SettingsView: View {
                     Picker("Search engine", selection: $engine) {
                         ForEach(SearchEngine.all) { Text($0.name).tag($0.name) }
                     }
+                }
+                Section("Appearance") {
+                    Picker("Appearance", selection: $appearance) {
+                        ForEach(Appearance.allCases) { Text($0.name).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
                 }
                 Section {
                     Toggle("Keep history", isOn: $history)
