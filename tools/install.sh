@@ -67,6 +67,9 @@ register() {
 </dict>
 </plist>
 EOF
+    # Written from inside Fjord (Fjord.cfg runs --register), they're marked as downloaded, and launchd won't load a
+    # job that is ("Bootstrap failed: 5"), so the updater never ran
+    xattr -d com.apple.quarantine "$plist" "$UPDATER/install.sh" 2>/dev/null || true
     launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
     # The same job under Fjord's old name, from before 1.0.1
     launchctl bootout "gui/$(id -u)/io.github.eliasmathisen.nocturne.update" 2>/dev/null || true

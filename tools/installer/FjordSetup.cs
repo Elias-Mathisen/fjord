@@ -205,9 +205,20 @@ static class Program
             if (File.Exists(old)) File.Delete(old);
             File.Move(self, old); // a running program can be renamed, just not overwritten
             File.Move(fresh, self);
-            Log(root, "Downloaded Fjord " + version);
             string args = string.Equals(root, DefaultRoot, StringComparison.OrdinalIgnoreCase) ? "--update" : "--update-in " + Quote(root);
-            Process.Start(new ProcessStartInfo(self, args) { UseShellExecute = false, CreateNoWindow = true });
+            try
+            {
+                Process.Start(new ProcessStartInfo(self, args) { UseShellExecute = false, CreateNoWindow = true });
+            }
+            catch (Exception e)
+            {
+                // An antivirus can refuse to start a program it hasn't seen before (Norton did with 3.0.5's): this copy
+                // goes back, so updating keeps working, and the next run tries the new one again
+                try { File.Delete(self); File.Move(old, self); } catch { }
+                Log(root, "Couldn't start Fjord " + version + "'s updater (" + e.Message + "): kept this one, trying again next time");
+                return false;
+            }
+            Log(root, "Downloaded Fjord " + version);
             return true;
         }
     }
