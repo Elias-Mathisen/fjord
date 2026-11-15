@@ -44,12 +44,14 @@
 
   // shortcut: badge polls every 2 s for the selected tab, rather than listening to uBlock's badge changes
   const updateBadge = async () => {
+    if (document.hidden) return; // minimised or behind other windows: caught up when it's shown again
     // Shields off sets both allowlists together, so Firefox's one tells us cheaply
     const n = site() && !ContentBlockingAllowList.includes(gBrowser.selectedBrowser) ? await pageCount() : 0;
     button.querySelector(".count").textContent = n ? (n > 99 ? "99+" : n) : "";
   };
   const timer = setInterval(updateBadge, 2000);
   gBrowser.tabContainer.addEventListener("TabSelect", updateBadge);
+  document.addEventListener("visibilitychange", updateBadge);
   window.addEventListener("unload", () => clearInterval(timer));
 
   // Per-site exceptions to clearing on close: "persist-data-on-shutdown" keeps a site's data when Ghost clears

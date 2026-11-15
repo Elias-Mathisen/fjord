@@ -114,19 +114,43 @@
   }
   #urlbar[open] .urlbar-background { border-radius: 16px !important; }
 
-  /* Web page floats as a rounded card */
+  /* Web page floats as a rounded card. The corners are painted over the page's corners instead of cutting the page to
+     a rounded shape: with the sidebar open, a rounded cut made every frame of the page take a slow path (48 frames a
+     second on a 240 Hz screen, 240 without it). Each corner is a 13px square: see-through inside the 12px curve, the
+     card's 1px edge on it, the window's colour outside. */
   #tabbrowser-tabbox {
+    position: relative !important;
     margin: 0 8px 8px !important;
-    border-radius: 12px !important;
-    overflow: clip !important;
     box-shadow: 0 0 0 1px var(--n-line) !important;
+  }
+  #tabbrowser-tabbox::before, #tabbrowser-tabbox::after {
+    --corner: transparent 11.6px, var(--n-line) 12.2px, var(--n-line) 12.8px, var(--n-bg) 13.4px;
+    content: "";
+    position: absolute;
+    inset-inline: -1px;
+    height: 13px;
+    z-index: 1;
+    pointer-events: none;
+    background-size: 13px 13px;
+    background-repeat: no-repeat;
+  }
+  #tabbrowser-tabbox::before {
+    top: -1px;
+    background-image: radial-gradient(circle at 100% 100%, var(--corner)), radial-gradient(circle at 0 100%, var(--corner));
+    background-position: left top, right top;
+  }
+  #tabbrowser-tabbox::after {
+    bottom: -1px;
+    background-image: radial-gradient(circle at 100% 0, var(--corner)), radial-gradient(circle at 0 0, var(--corner));
+    background-position: left bottom, right bottom;
   }
   #tabbrowser-tabpanels { background: var(--n-bg) !important; }
   :root:is([inFullscreen], [inDOMFullscreen]) #tabbrowser-tabbox {
     margin: 0 !important;
-    border-radius: 0 !important;
     box-shadow: none !important;
   }
+  :root:is([inFullscreen], [inDOMFullscreen]) #tabbrowser-tabbox::before,
+  :root:is([inFullscreen], [inDOMFullscreen]) #tabbrowser-tabbox::after { display: none; }
 
   /* ---------- Setup and settings ---------- */
   .ns-overlay {
