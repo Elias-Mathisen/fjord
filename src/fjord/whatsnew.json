@@ -1,4 +1,9 @@
 {
+  "3.0.5": [
+    "Smoother pages with the sidebar open: the page's rounded corners are drawn a faster way, which used to hold scrolling and animations to about 50 frames a second on fast screens. They look just the same.",
+    "Fjord's logo shows in the taskbar from the moment a window opens, never Firefox's.",
+    "Windows you've minimised no longer keep checking what Shields blocked; they catch up when you open them."
+  ],
   "3.0.4": [
     "Firefox's fox is gone from everywhere it showed up, like Settings, private windows, Add-ons, the sidebar and tips, and Fjord's mountains are there instead.",
     "Settings start on General: no more empty Mozilla account section."
